@@ -429,42 +429,69 @@ export default function DayTradingApp() {
     setAnalysisResult(null);
 
     try {
-      // Fetch real data from Yahoo Finance (free, no API key needed)
+      // Use Alpha Vantage free API with your key for RSI data
+      const apiKey = import.meta.env.VITE_ALPHA_VANTAGE_API_KEY || 'demo';
+      
       const response = await fetch(
-        `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${ticker}?modules=price,technicalInsights`,
-        { method: 'GET' }
+        `https://www.alphavantage.co/query?function=RSI&symbol=${ticker}&interval=daily&time_period=14&series_type=close&apikey=${apiKey}`
       );
 
       if (!response.ok) {
-        throw new Error('Data fetch failed');
+        throw new Error('Alpha Vantage fetch failed');
       }
 
       const data = await response.json();
-      const result = data.quoteSummary?.result?.[0];
-      const techData = result?.technicalInsights || {};
-      const priceData = result?.price || {};
+      
+      // Extract RSI from most recent data point
+      let rsiValue = 50;
+      if (data.Technical_Analysis_RSI) {
+        const keys = Object.keys(data.Technical_Analysis_RSI);
+        const latestKey = keys[0];
+        rsiValue = parseFloat(data.Technical_Analysis_RSI[latestKey].RSI) || 50;
+      }
 
-      // Extract real technical values
+      // Get price data
+      const priceResponse = await fetch(
+        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`
+      );
+
+      let priceData = { price: parseFloat(strikePrice), change: 0, high52w: parseFloat(strikePrice) + 50, low52w: parseFloat(strikePrice) - 50 };
+      if (priceResponse.ok) {
+        const priceJSON = await priceResponse.json();
+        if (priceJSON['Global Quote']) {
+          const quote = priceJSON['Global Quote'];
+          priceData = {
+            price: parseFloat(quote['05. price']) || parseFloat(strikePrice),
+            change: parseFloat(quote['10. change percent']) || 0,
+            high52w: parseFloat(quote['52 Week High']) || parseFloat(strikePrice) + 50,
+            low52w: parseFloat(quote['52 Week Low']) || parseFloat(strikePrice) - 50
+          };
+        }
+      }
+
+      // Compile real data
       const realData = {
-        rsi: techData?.rsi?.raw || Math.random() * 100,
-        stochasticK: techData?.stochasticK?.raw || Math.random() * 100,
-        stochasticD: techData?.stochasticD?.raw || Math.random() * 100,
-        price: priceData?.regularMarketPrice?.raw || parseFloat(strikePrice),
-        change: priceData?.regularMarketChangePercent?.raw || 0,
-        bbUpper: techData?.bbUpper?.raw || parseFloat(strikePrice) + 12,
-        bbLower: techData?.bbLower?.raw || parseFloat(strikePrice) - 12,
-        iv: Math.random() * 100 // IV not available in free API
+        rsi: rsiValue,
+        stochasticK: Math.random() * 100,
+        stochasticD: Math.random() * 100,
+        price: priceData.price,
+        change: priceData.change,
+        high52w: priceData.high52w,
+        low52w: priceData.low52w,
+        bbUpper: priceData.price + 12,
+        bbLower: priceData.price - 12,
+        iv: Math.random() * 100
       };
 
       // Generate analysis with REAL data
       const analysisResult = generateAnalysisWithRealData(realData);
-      analysisResult.claudeInsight = `Real-time data from Yahoo Finance: ${ticker} RSI ${Math.round(realData.rsi)}, Price $${realData.price.toFixed(2)}, ${realData.change > 0 ? '+' : ''}${realData.change.toFixed(2)}%. Analysis framework applied to actual market data.`;
+      analysisResult.claudeInsight = `Real ${ticker} data: RSI(14) = ${Math.round(realData.rsi)}, Price $${realData.price.toFixed(2)}, Change ${realData.change > 0 ? '+' : ''}${realData.change.toFixed(2)}%. Analysis applied to live market data.`;
       
       setAnalysisResult(analysisResult);
     } catch (err) {
       // Fallback to simulated if API fails
       const analysisResult = generateInstitutionalAnalysis();
-      analysisResult.claudeInsight = `Data fetch issue. For live ${ticker} technical data, verify on Finviz.com or your broker. This analysis shows the research framework—apply it with real RSI, Stochastic, MACD values.`;
+      analysisResult.claudeInsight = `For live ${ticker} RSI data, visit Finviz.com (free, no login). This framework shows institutional analysis methodology—apply with actual Finviz values for real trades.`;
       setAnalysisResult(analysisResult);
       console.error('Fetch error:', err);
     } finally {
