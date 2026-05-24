@@ -457,16 +457,21 @@ export default function DayTradingApp() {
       const toDate = today.toISOString().split('T')[0];
 
       const techResponse = await fetch(
-        `https://api.polygon.io/v1/indicators/rsi/${ticker}?timespan=day&adjusted=true&window=14&series_type=close&long_window=26&short_window=12&signal_window=9&expand_underlying=false&order=desc&limit=100&apikey=${apiKey}`
+        `https://api.polygon.io/v1/indicators/rsi/${ticker}?timespan=day&adjusted=true&window=14&series_type=close&expand_underlying=false&order=desc&limit=10&apikey=${apiKey}`
       );
 
       let rsiValue = 50;
-      let macdData = { signal: 0, histogram: 0, value: 0 };
       
       if (techResponse.ok) {
         const techJSON = await techResponse.json();
-        if (techJSON.results?.values && techJSON.results.values.length > 0) {
-          rsiValue = techJSON.results.values[0].value || 50;
+        console.log('Polygon RSI Response:', techJSON); // Debug log
+        
+        // Polygon returns results.values array
+        if (techJSON.results?.values && Array.isArray(techJSON.results.values)) {
+          const latestRSI = techJSON.results.values[0];
+          if (latestRSI && typeof latestRSI.value === 'number') {
+            rsiValue = latestRSI.value;
+          }
         }
       }
 
