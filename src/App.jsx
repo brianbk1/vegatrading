@@ -659,6 +659,21 @@ Respond with a 2-sentence professional assessment of edge, risk management, and 
             <h1>Day Trade</h1>
           </div>
           <p>Institutional-Grade Options Analysis</p>
+          
+          {/* DISCLAIMER */}
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '0.75rem',
+            background: '#fef3c7',
+            border: '1px solid #fcd34d',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            color: '#92400e',
+            lineHeight: '1.4',
+            fontWeight: 500
+          }}>
+            ⚠️ <strong>DISCLAIMER:</strong> This tool is for research and educational purposes only. It is NOT financial advice. Do your own research, consult a licensed advisor, and never risk more than you can afford to lose. Past performance does not guarantee future results. Options trading carries substantial risk.
+          </div>
         </div>
 
         <div className="card">
