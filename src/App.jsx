@@ -1230,16 +1230,85 @@ Respond with a 2-sentence professional assessment of edge, risk management, and 
         )}
 
         {!analysisResult && !isAnalyzing && (
-          <div className="card">
-            <div className="empty-state">
-              <div style={{ fontSize: '3rem', marginBottom: '0.75rem', opacity: 0.5 }}>⚡</div>
-              <p style={{ margin: '0.5rem 0 0 0', color: '#9ca3af', fontSize: '0.875rem' }}>
-                Enter your trade setup to see institutional-grade analysis
+          <div>
+            {/* Intro */}
+            <div className="card">
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', margin: '0 0 10px' }}>Options Trading Analysis — Institutional-Grade Tools for Day Traders</h1>
+              <p style={{ fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.7, margin: 0 }}>
+                Vega Trading Analysis gives options traders a fast, structured way to evaluate trade setups before pulling the trigger.
+                Enter your ticker, strike price, days to expiry, and trading thesis — and get an institutional-grade analysis covering
+                Greeks, technical indicators, implied volatility, risk/reward ratios, and win probability. Built for day traders
+                who trade QQQ, SPY, SPX, and high-volatility single stocks like NVDA, TSLA, and AMD.
               </p>
             </div>
+
+            {/* How It Works */}
+            <div className="card">
+              <span className="form-section-title">How It Works</span>
+              {[
+                { icon: '🎯', title: 'Select your setup', desc: 'Choose your ticker, option type (call or put), strike price, and days to expiry. Works for 0DTE scalps through multi-week swing trades.' },
+                { icon: '📝', title: 'Enter your thesis', desc: 'Describe your trade rationale — macro catalyst, technical setup, or momentum read. The AI uses this to sharpen its analysis.' },
+                { icon: '⚡', title: 'Get your score', desc: 'Receive a 0–100 Trade Quality Score based on liquidity, technical signals, risk/reward ratio, and implied volatility context.' },
+                { icon: '📊', title: 'Review the Greeks', desc: 'See delta, gamma, theta, and vega estimates alongside RSI, MACD, Bollinger Bands, and stochastic readings.' },
+              ].map((step, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: i < 3 ? '14px' : 0 }}>
+                  <span style={{ fontSize: '18px', flexShrink: 0 }}>{step.icon}</span>
+                  <div>
+                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1f2937', margin: '0 0 2px' }}>{step.title}</p>
+                    <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Popular instruments */}
+            <div className="card">
+              <span className="form-section-title">Popular Options Trading Setups</span>
+              {[
+                { title: 'QQQ 0DTE Calls & Puts', desc: 'The Nasdaq-100 ETF is one of the most liquid options markets in the world. Traders use QQQ 0DTE options for intraday directional bets around Fed announcements, CPI prints, and tech earnings reactions.' },
+                { title: 'SPY & SPX Weekly Options', desc: 'S&P 500 options offer tight bid-ask spreads and enormous volume. Weekly expirations (Monday, Wednesday, Friday) give traders multiple entry opportunities each week with defined risk exposure.' },
+                { title: 'NVDA & TSLA High-Volatility Singles', desc: 'Single-stock options on mega-cap tech offer outsized moves around earnings, product launches, and macro events. Higher implied volatility means larger premiums — and larger risk. Position sizing is critical.' },
+                { title: 'VIX Calls as Portfolio Hedges', desc: 'Volatility index options don\'t trade like equity options — VIX calls are a common hedge against sudden market drawdowns. Understanding vega and term structure is essential before trading VIX derivatives.' },
+              ].map((item, i) => (
+                <div key={i} style={{ borderLeft: '3px solid #ff8c42', paddingLeft: '12px', marginBottom: i < 3 ? '14px' : 0 }}>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1f2937', margin: '0 0 3px' }}>{item.title}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Options education */}
+            <div className="card">
+              <span className="form-section-title">Understanding the Greeks</span>
+              {[
+                { greek: 'Delta (Δ)', desc: 'Measures how much an option\'s price moves per $1 move in the underlying. A delta of 0.50 means the option gains ~$0.50 for every $1 the stock rises. Deep ITM options approach delta 1.0; far OTM options approach 0.' },
+                { greek: 'Gamma (Γ)', desc: 'The rate of change of delta. High gamma means delta shifts rapidly with price moves — a double-edged sword for 0DTE traders where gamma is at its peak near the strike price.' },
+                { greek: 'Theta (Θ)', desc: 'Time decay — the daily erosion of an option\'s extrinsic value. Theta accelerates dramatically in the final days before expiration. Sellers profit from theta; buyers fight against it.' },
+                { greek: 'Vega (ν)', desc: 'Sensitivity to implied volatility changes. A vega of 0.30 means the option gains $0.30 for every 1% rise in IV. Long options benefit from IV expansion; short options benefit from IV crush after events.' },
+              ].map((item, i) => (
+                <div key={i} style={{ background: i % 2 === 0 ? '#f9fafb' : 'white', borderRadius: '8px', padding: '10px 12px', marginBottom: i < 3 ? '8px' : 0 }}>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ff8c42', margin: '0 0 3px' }}>{item.greek}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="card" style={{ background: '#fff8f0', border: '1px solid #fed7aa' }}>
+              <span className="form-section-title" style={{ color: '#92400e' }}>⚠️ Risk Disclaimer</span>
+              <p style={{ fontSize: '0.8rem', color: '#78350f', lineHeight: 1.7, margin: 0 }}>
+                Options trading involves substantial risk of loss and is not appropriate for all investors. This tool provides
+                educational analysis only and does not constitute financial advice or a recommendation to buy or sell any security.
+                Past performance is not indicative of future results. Always trade with risk capital you can afford to lose,
+                use defined-risk strategies, and consult a licensed financial advisor before making investment decisions.
+              </p>
+            </div>
+
           </div>
         )}
       </div>
     </div>
   );
 }
+ 
+ 
