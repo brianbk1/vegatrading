@@ -656,7 +656,7 @@ Respond with a 2-sentence professional assessment of edge, risk management, and 
         <div className="header">
           <div className="header-top">
             <div className="header-icon">⚡</div>
-            <h1>Day Trade</h1>
+            <h1>Vega Day Trading Analyzer</h1>
           </div>
           <p>Institutional-Grade Options Analysis</p>
           
