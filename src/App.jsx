@@ -342,32 +342,22 @@ export default function DayTradingApp() {
           messages: [
             {
               role: 'user',
-              content: `Search Finviz.com for CURRENT real-time technical data on ${ticker}. Find ALL of:
+              content: `Go to Finviz.com and search for ${ticker}. Extract EXACT current real-time values:
 
-1. RSI (14) - Relative Strength Index
-2. Stochastic K and D values
-3. MACD (signal, momentum direction)
-4. Bollinger Bands position (upper, middle, lower, and where price is)
-5. Current Price
-6. Daily change %
-7. 52-week High/Low
-8. IV (implied volatility) percentile if available
+RSI (14): [exact number from Finviz]
+Stochastic K: [exact number]
+Stochastic D: [exact number]
+MACD: [signal line value and direction - is it bullish or bearish crossover?]
+Bollinger Bands: Upper [value], Middle [value], Lower [value]
+Current Price: $[exact current price]
+Daily Change: [%]
+52-Week High: $[value]
+52-Week Low: $[value]
+IV Percentile: [value if shown]
 
-Format clearly:
-RSI: [value]
-Stochastic K: [value], D: [value]
-MACD: [signal], [direction - bullish/bearish]
-BB Upper: [value], Middle: [value], Lower: [value], Price Position: [location]
-Price: $[value]
-Change: [%]
-52W High: $[value], Low: $[value]
-IV Percentile: [value]
-
-Then evaluate this ${optionType.toUpperCase()} options trade:
+Format EXACTLY as shown above. Then provide brief professional assessment of this ${optionType.toUpperCase()} trade:
 Strike: $${strikePrice}, DTE: ${daysToExpiry}
-Thesis: ${thesis}
-
-Professional assessment: Does the real technical setup support this trade? What are key risks?`
+Thesis: ${thesis}`
             }
           ]
         })
@@ -410,9 +400,24 @@ Professional assessment: Does the real technical setup support this trade? What 
   };
 
   const extractValue = (text, label, defaultValue) => {
-    const regex = new RegExp(`${label}[:\\s]+([0-9.]+)`, 'i');
-    const match = text.match(regex);
-    return match ? parseFloat(match[1]) : defaultValue;
+    // Multiple regex patterns to catch variations
+    const patterns = [
+      new RegExp(`${label}[:\\s]*\\(?\\d*\\)?[:\\s]*([0-9.]+)`, 'i'),
+      new RegExp(`${label}[:\\s]+([0-9.]+)`, 'i'),
+      new RegExp(`${label}\\s+([0-9.]+)`, 'i'),
+    ];
+    
+    for (let pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        const value = parseFloat(match[1]);
+        if (!isNaN(value)) {
+          return value;
+        }
+      }
+    }
+    
+    return defaultValue;
   };
 
   const reset = () => {
@@ -1060,7 +1065,7 @@ Professional assessment: Does the real technical setup support this trade? What 
                 position: 'relative',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg viewBox="0 0 400 150" style={{ width: '100%', height: '200px' }}>
+                <svg viewBox="0 0 400 180" style={{ width: '100%', height: '200px' }}>
                   {/* Chart background */}
                   <defs>
                     <linearGradient id="priceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1070,37 +1075,67 @@ Professional assessment: Does the real technical setup support this trade? What 
                   </defs>
                   
                   {/* Grid lines */}
-                  <line x1="0" y1="37.5" x2="400" y2="37.5" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <line x1="0" y1="75" x2="400" y2="75" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <line x1="0" y1="45" x2="400" y2="45" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <line x1="0" y1="90" x2="400" y2="90" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <line x1="0" y1="135" x2="400" y2="135" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
                   
-                  {/* Price line */}
-                  <polyline
-                    points={generateHistoricalData(chartTimeframe).dataPoints
-                      .map((price, i) => {
-                        const x = (i / (generateHistoricalData(chartTimeframe).dataPoints.length - 1)) * 400;
-                        const minPrice = Math.min(...generateHistoricalData(chartTimeframe).dataPoints);
-                        const maxPrice = Math.max(...generateHistoricalData(chartTimeframe).dataPoints);
-                        const range = maxPrice - minPrice || 1;
-                        const y = 150 - ((price - minPrice) / range) * 150;
-                        return `${x},${y}`;
-                      })
-                      .join(' ')}
-                    fill="none"
-                    stroke="#ff8c42"
-                    strokeWidth="2"
-                  />
-                  
-                  {/* Strike line */}
-                  <line
-                    x1="0"
-                    y1={150 - ((parseFloat(strikePrice || 400) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) / (Math.max(...generateHistoricalData(chartTimeframe).dataPoints) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) * 150)}
-                    x2="400"
-                    y2={150 - ((parseFloat(strikePrice || 400) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) / (Math.max(...generateHistoricalData(chartTimeframe).dataPoints) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) * 150)}
-                    stroke="#00c8c8"
-                    strokeWidth="1.5"
-                    strokeDasharray="5,5"
-                  />
+                  {(() => {
+                    const chartData = generateHistoricalData(chartTimeframe);
+                    const dataPoints = chartData.dataPoints;
+                    const minPrice = Math.min(...dataPoints);
+                    const maxPrice = Math.max(...dataPoints);
+                    const range = maxPrice - minPrice || 1;
+                    
+                    return (
+                      <>
+                        {/* Price line */}
+                        <polyline
+                          points={dataPoints
+                            .map((price, i) => {
+                              const x = (i / (dataPoints.length - 1)) * 400;
+                              const y = 180 - ((price - minPrice) / range) * 150;
+                              return `${x},${y}`;
+                            })
+                            .join(' ')}
+                          fill="none"
+                          stroke="#ff8c42"
+                          strokeWidth="2"
+                        />
+                        
+                        {/* Data point circles with price labels */}
+                        {dataPoints.map((price, i) => {
+                          const x = (i / (dataPoints.length - 1)) * 400;
+                          const y = 180 - ((price - minPrice) / range) * 150;
+                          return (
+                            <g key={i}>
+                              <circle cx={x} cy={y} r="3" fill="#ff8c42" />
+                              <text 
+                                x={x} 
+                                y={y - 10} 
+                                textAnchor="middle" 
+                                fontSize="10" 
+                                fill="#1f2937"
+                                fontWeight="600"
+                              >
+                                ${price.toFixed(2)}
+                              </text>
+                            </g>
+                          );
+                        })}
+                        
+                        {/* Strike line */}
+                        <line
+                          x1="0"
+                          y1={180 - ((parseFloat(strikePrice || 400) - minPrice) / range) * 150}
+                          x2="400"
+                          y2={180 - ((parseFloat(strikePrice || 400) - minPrice) / range) * 150}
+                          stroke="#00c8c8"
+                          strokeWidth="1.5"
+                          strokeDasharray="5,5"
+                        />
+                      </>
+                    );
+                  })()}
                 </svg>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.75rem', color: '#6b7280' }}>
