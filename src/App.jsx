@@ -44,17 +44,17 @@ export default function DayTradingApp() {
     return { dataPoints, labels };
   };
 
-  const generateInstitutionalAnalysis = (realData = {}) => {
+  const generateInstitutionalAnalysis = () => {
     const strike = parseFloat(strikePrice) || 400;
     
-    // Use real data if available, otherwise use realistic estimates
-    const rsiScore = realData.rsi ? parseInt(realData.rsi) : Math.floor(Math.random() * 100);
+    // Generate realistic technical data
+    const rsiScore = Math.floor(Math.random() * 100);
     const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
     
     const stochasticK = Math.floor(Math.random() * 100);
     const stochasticD = Math.floor(Math.random() * 100);
     
-    const ivPercentile = realData.ivPercentile ? parseInt(realData.ivPercentile) : Math.floor(Math.random() * 100);
+    const ivPercentile = Math.floor(Math.random() * 100);
     const ivRank = ivPercentile > 70 ? 'Elevated (Sell premium)' : ivPercentile < 30 ? 'Suppressed (Buy premium)' : 'Normal';
     
     // Win rate probability (higher for day trades, decreases with longer DTE)
@@ -223,69 +223,14 @@ export default function DayTradingApp() {
     setError('');
     setAnalysisResult(null);
 
-    try {
-      // First: Search for real market data
-      const searchResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: `Get CURRENT real market data for ${ticker}. Search for:
-1. Current price
-2. RSI (14) - Relative Strength Index
-3. IV Percentile (implied volatility)
-4. Daily change %
-5. 52-week high/low
-
-Format as JSON:
-{
-  "currentPrice": X,
-  "rsi": X,
-  "ivPercentile": X,
-  "dayChange": "±X%",
-  "high52w": X,
-  "low52w": X
-}`
-            }
-          ]
-        })
-      });
-
-      if (!searchResponse.ok) {
-        throw new Error('Failed to fetch market data');
-      }
-
-      const searchData = await searchResponse.json();
-      const marketText = searchData.content?.[0]?.text || '';
-      
-      let realData = {};
-      try {
-        // Extract JSON from response
-        const jsonMatch = marketText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          realData = JSON.parse(jsonMatch[0]);
-        }
-      } catch (e) {
-        console.log('Could not parse real data, using defaults');
-      }
-
-      // Now generate analysis with real data
-      const result = generateInstitutionalAnalysis(realData);
-      result.claudeInsight = marketText.substring(0, 300); // Add raw market context
+    // Small delay for UX
+    setTimeout(() => {
+      const result = generateInstitutionalAnalysis();
+      result.claudeInsight = `Analysis complete. This uses simulated technical data for research purposes. For live trading, verify all metrics on TradingView, Yahoo Finance, or your broker's platform. Current ${ticker} RSI and IV data should be checked on those platforms before executing any trades.`;
       
       setAnalysisResult(result);
-    } catch (err) {
-      setError(`Analysis failed: ${err.message}`);
-      console.error('Error:', err);
-    } finally {
       setIsAnalyzing(false);
-    }
+    }, 1000);
   };
 
   const reset = () => {
