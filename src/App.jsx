@@ -392,7 +392,39 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1rem', marginBottom: '2rem' }}>
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#1e40af' }}>📊 What Does Your Score Mean?</h4>
+              <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
+                {analysisResult.overallScore > 75 ? (
+                  <>
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#059669' }}>
+                      🟢 Institutional Grade ({analysisResult.overallScore}/100)
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      This trade setup meets professional-level standards. The combination of high liquidity, favorable risk/reward ratio, and strong technical alignment suggests this is a trade worth considering. Institutional traders would find this setup attractive due to the quality metrics. However, this is NOT a guaranteed win—always verify data on Finviz and set proper stop losses.
+                    </p>
+                  </>
+                ) : analysisResult.overallScore > 60 ? (
+                  <>
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#d97706' }}>
+                      🟡 Trade Worthy ({analysisResult.overallScore}/100)
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      This trade has acceptable risk/reward characteristics and reasonable technical alignment. While not institutional-grade, it still meets minimum standards for execution. Success depends on proper position sizing, stop loss placement, and execution at the right price. Requires more precision than higher-scoring setups.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#dc2626' }}>
+                      🔴 Caution ({analysisResult.overallScore}/100)
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      This trade setup shows weak metrics. The combination of unfavorable risk/reward or conflicting technical signals suggests waiting for a better setup. Consider passing on this trade and waiting for institutional-grade opportunities. When risk/reward is poor, the probability of success needs to be very high to justify the trade.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
                 ⚠️ This is educational analysis only. Not financial advice. Always verify data on your broker before trading.
               </p>
