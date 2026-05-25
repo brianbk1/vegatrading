@@ -1103,8 +1103,8 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            {/* POSITION SETUP & RISK MANAGEMENT */}
-            <PositionSetupSummary />
+            {/* POSITION SETUP - DISABLED FOR DEBUGGING */}
+            {/* <PositionSetupSummary /> */}
 
             {/* OVERALL SCORE */}
             <div className="card">
