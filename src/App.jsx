@@ -179,7 +179,7 @@ export default function DayTradingApp() {
       // PROBABILITY & WIN RATE
       winProbability,
       profitProbability,
-      expectedMovePercent: (Math.random() * 4 + 2).toFixed(2),
+      expectedMovePercent: Math.random() * 4 + 2,
       
       // PROFESSIONAL OPTIONS DATA
       optionPrice,
@@ -1187,7 +1187,7 @@ export default function DayTradingApp() {
                 </div>
                 <div className="metric-row">
                   <span className="metric-label">Expected Move</span>
-                  <span className="metric-value">±{analysisResult.expectedMovePercent}%</span>
+                  <span className="metric-value">±{parseFloat(analysisResult.expectedMovePercent).toFixed(2)}%</span>
                 </div>
               </div>
             </div>
