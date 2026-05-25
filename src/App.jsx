@@ -292,7 +292,7 @@ export default function DayTradingApp() {
       result.lastClose = realData.lastClose;
       result.optionPrice = realData.optionPrice;
       result.dataSource = realData.dataSource;
-      result.claudeInsight = `Live ${ticker} data: RSI(14) = ${finalRSI} (${finalRSI > 70 ? 'Overbought' : finalRSI < 30 ? 'Oversold' : 'Neutral'}). Last close: $${realData.lastClose}. Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. ${realData.optionPrice ? `Option price: $${realData.optionPrice.toFixed(2)}` : ''} ⚠️ AI-generated data may not be 100% accurate. Always verify on Finviz.com or your broker.`;
+      result.claudeInsight = `Live ${ticker} data: RSI(14) = ${finalRSI} (${finalRSI > 70 ? 'Overbought' : finalRSI < 30 ? 'Oversold' : 'Neutral'}). Last close: $${realData.lastClose}. Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. ${realData.optionPrice ? `Option price: $${parseFloat(realData.optionPrice).toFixed(2)}` : ''} ⚠️ AI-generated data may not be 100% accurate. Always verify on Finviz.com or your broker.`;
       
       console.log('Final result before setAnalysisResult:', result);
       setAnalysisResult(result);
@@ -314,158 +314,6 @@ export default function DayTradingApp() {
     setDaysToExpiry('1');
     setAnalysisResult(null);
     setError('');
-  };
-
-  // Position Setup Summary Card
-  const PositionSetupSummary = () => {
-    if (!analysisResult) return null;
-    
-    const [isExpanded, setIsExpanded] = useState(false);
-    const riskRewardRatio = parseFloat(analysisResult.riskRewardRatio);
-    const maxRisk = parseFloat(analysisResult.maxLoss);
-    const lastClose = parseFloat(analysisResult.lastClose);
-    const breakEven = parseFloat(analysisResult.beCall);
-
-    const priceMove = breakEven - lastClose;
-    const priceMovePercent = ((priceMove / lastClose) * 100).toFixed(2);
-
-    return (
-      <div style={{
-        background: '#fff8f0',
-        border: '2px solid #ff8c42',
-        borderRadius: '12px',
-        padding: '1.25rem',
-        marginBottom: '1.5rem',
-        cursor: 'pointer'
-      }}
-      onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: isExpanded ? '1rem' : '0'
-        }}>
-          <h3 style={{
-            margin: 0,
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: '#1f2937'
-          }}>
-            📊 Position Setup & Risk Management
-          </h3>
-          <span style={{
-            fontSize: '1.5rem',
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s'
-          }}>
-            ▼
-          </span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-          marginBottom: isExpanded ? '1rem' : '0',
-          fontSize: '0.9rem'
-        }}>
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Last Close</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(lastClose).toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Market price</p>
-          </div>
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Option Price</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(analysisResult.optionPrice || maxRisk).toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
-          </div>
-
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Contracts to Trade</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff6b35' }}>{analysisResult.contractsToTrade}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>At 2% risk</p>
-          </div>
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Max Risk</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#dc2626' }}>${maxRisk.toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
-          </div>
-
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Max Reward</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>${parseFloat(analysisResult.maxGain).toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
-          </div>
-          <div>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Risk/Reward Ratio</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: riskRewardRatio >= 1 ? '#059669' : '#dc2626' }}>1:{riskRewardRatio.toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Payoff ratio</p>
-          </div>
-
-          <div style={{ gridColumn: '1 / -1' }}>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Break-Even</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${breakEven.toFixed(2)}</div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Price target (${priceMove.toFixed(2)} move, +{priceMovePercent}%)</p>
-          </div>
-
-          <div style={{ gridColumn: '1 / -1' }}>
-            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#92400e', textTransform: 'uppercase', fontWeight: 600 }}>⚠️ IV Crush Impact (Post-Event)</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>IV Crush %</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>-{analysisResult.ivCrushPercent}%</div>
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Typical decline</p>
-              </div>
-              <div>
-                <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>Price After Crush</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>${parseFloat(analysisResult.pricePostCrush).toFixed(2)}</div>
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Est. value</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {isExpanded && (
-          <div style={{
-            paddingTop: '1rem',
-            borderTop: '1px solid #fed7aa'
-          }}>
-            <div style={{
-              background: '#fef3c7',
-              padding: '0.75rem',
-              borderRadius: '6px',
-              marginBottom: '1rem',
-              fontSize: '0.85rem'
-            }}>
-              <p style={{ margin: '0 0 0.5rem 0', fontWeight: 700, color: '#92400e' }}>
-                🚨 CRITICAL: Adjust contracts for YOUR account!
-              </p>
-              <p style={{ margin: 0, color: '#78350f' }}>
-                Use: (2% of your account) ÷ ${maxRisk.toFixed(2)} = your contracts
-              </p>
-            </div>
-
-            <div style={{
-              padding: '0.75rem',
-              borderRadius: '6px',
-              background: riskRewardRatio >= 2 ? '#d1fae5' : riskRewardRatio >= 1 ? '#fef3c7' : '#fee2e2',
-              borderLeft: `4px solid ${riskRewardRatio >= 2 ? '#059669' : riskRewardRatio >= 1 ? '#f59e0b' : '#dc2626'}`,
-              fontSize: '0.85rem'
-            }}>
-              <strong>
-                {riskRewardRatio >= 2 ? '✅ Strong Trade Setup' :
-                 riskRewardRatio >= 1 ? '⚠️ Acceptable Trade' :
-                 '❌ Poor Risk/Reward'}
-              </strong>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem' }}>
-                {riskRewardRatio >= 1 ? 'Good odds. Risk/reward is favorable.' : 'This trade loses money over time statistically.'}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const ScoreBar = ({ value, label, color }) => (
@@ -1278,7 +1126,7 @@ export default function DayTradingApp() {
                                 fill="#1f2937"
                                 fontWeight="600"
                               >
-                                ${price.toFixed(2)}
+                                ${parseFloat(price).toFixed(2)}
                               </text>
                             </g>
                           );
