@@ -71,8 +71,44 @@ export default function DayTradingApp() {
       const totalMaxRisk = contractsToTrade * maxRiskPerContract;
       const totalMaxGain = contractsToTrade * maxGainPerContract;
 
-      // Generate Trade Thesis
-      let thesisStatement = '';
+      // Generate Trade Thesis Analysis from user input
+      let thesisAnalysis = '';
+      if (userThesis && userThesis.trim().length > 0) {
+        // Analyze user's thesis for quality signals
+        const thesisLower = userThesis.toLowerCase();
+        const hasStopLoss = thesisLower.includes('stop') || thesisLower.includes('loss');
+        const hasTakeProfit = thesisLower.includes('profit') || thesisLower.includes('target');
+        const hasTimeframe = thesisLower.includes('day') || thesisLower.includes('expir') || thesisLower.includes('week');
+        const hasTechnicals = thesisLower.includes('rsi') || thesisLower.includes('macd') || thesisLower.includes('support') || thesisLower.includes('resistance');
+        const hasRiskReward = thesisLower.includes('risk') || thesisLower.includes('reward') || thesisLower.includes('ratio');
+        const hasCatalyst = thesisLower.includes('earn') || thesisLower.includes('fed') || thesisLower.includes('cpi') || thesisLower.includes('event') || thesisLower.includes('catalyst');
+
+        let positives = [];
+        let warnings = [];
+
+        if (hasStopLoss) positives.push('✅ You mention stop loss—good risk management');
+        else warnings.push('⚠️ No stop loss mentioned—define max loss before trading');
+
+        if (hasTakeProfit) positives.push('✅ You have a profit target—clear exit plan');
+        else warnings.push('⚠️ No take profit level—consider target price');
+
+        if (hasTimeframe) positives.push('✅ You reference timeframe—aligned with expiration');
+        else warnings.push('⚠️ No clear timeframe—ensure thesis aligns with DTE');
+
+        if (hasTechnicals) positives.push('✅ You cite technical levels—analytical approach');
+        else warnings.push('⚠️ No technical analysis mentioned—verify levels on Finviz');
+
+        if (hasRiskReward) positives.push('✅ You mention risk/reward—thinking like a pro');
+        else warnings.push('⚠️ No R:R discussed—current setup is 1:' + riskRewardRatio);
+
+        if (hasCatalyst) positives.push('✅ You reference catalysts—aware of event risk');
+        else warnings.push('⚠️ No catalysts mentioned—check earnings calendar');
+
+        thesisAnalysis = (positives.length > 0 ? positives.join(' ') + '\n\n' : '') +
+                        (warnings.length > 0 ? warnings.join('\n') : '✅ Strong thesis with clear risk management plan.');
+      } else {
+        thesisAnalysis = '⚠️ No trade thesis provided. Consider explaining your reasoning before placing the trade.';
+      }
       let thesisColor = '#374151';
       
       if (riskRewardRatio >= 2) {
@@ -169,6 +205,7 @@ export default function DayTradingApp() {
         // Trade Thesis
         thesisStatement,
         userThesis,
+        thesisAnalysis,
       });
     } catch (err) {
       console.error('Error:', err);
@@ -401,9 +438,18 @@ export default function DayTradingApp() {
                 <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#374151' }}>
                   📌 Your Trade Thesis
                 </h3>
-                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: '#4b5563', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.95rem', lineHeight: '1.7', color: '#4b5563', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
                   {analysisResult.userThesis}
                 </p>
+
+                <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', marginTop: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1f2937' }}>
+                    💬 Analysis of Your Thesis
+                  </h4>
+                  <div style={{ fontSize: '0.9rem', color: '#374151', lineHeight: '1.8', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                    {analysisResult.thesisAnalysis}
+                  </div>
+                </div>
               </div>
             )}
 
