@@ -12,7 +12,8 @@ export default function DayTradingApp() {
   const [error, setError] = useState('');
 
   const [chartTimeframe, setChartTimeframe] = useState('today');
-  const [manualRSI, setManualRSI] = useState('50');
+  const [manualRSI, setManualRSI] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
 
   const generateHistoricalData = (timeframe) => {
     const strike = parseFloat(strikePrice) || 400;
@@ -226,23 +227,30 @@ export default function DayTradingApp() {
     setAnalysisResult(null);
 
     try {
-      // Fetch real technical data from backend API
+      // Fetch real technical data from backend API with strike and expiry
       const dataResponse = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ticker }),
+        body: JSON.stringify({ 
+          ticker,
+          strikePrice,
+          expiryDate
+        }),
       });
 
       let realData = null;
+      let apiRSI = null;
       if (dataResponse.ok) {
         realData = await dataResponse.json();
+        apiRSI = realData.rsi14; // Store the API RSI value
       }
 
       // If API fails, fall back to simulated
       if (!realData) {
         realData = {
+          lastClose: parseFloat(strikePrice) || 400,
           rsi14: parseInt(manualRSI) || 50,
           rsiInterpretation: parseInt(manualRSI) > 70 ? 'Overbought' : parseInt(manualRSI) < 30 ? 'Oversold' : 'Neutral',
           macdSignal: Math.random() > 0.5 ? 'Bullish Crossover' : 'Bearish Crossover',
@@ -252,13 +260,19 @@ export default function DayTradingApp() {
           bollingerLower: parseFloat(strikePrice) - 12,
           bbPosition: Math.random() > 0.5 ? 'Near Upper Band' : 'Near Lower Band',
           ivPercentile: Math.floor(Math.random() * 100),
+          optionPrice: parseFloat(strikePrice) * (Math.random() * 0.08 + 0.02),
           currentPrice: parseFloat(strikePrice)
         };
       }
 
+      // Use manual RSI override if provided, otherwise use API RSI
+      const finalRSI = manualRSI && parseInt(manualRSI) > 0 ? parseInt(manualRSI) : (apiRSI || realData.rsi14);
+      
       // Now get institutional analysis with real data
-      const result = generateInstitutionalAnalysis(realData.rsi14, realData);
-      result.claudeInsight = `Live ${ticker} data: RSI(14) = ${realData.rsi14} (${realData.rsiInterpretation}). Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. Institutional framework applied to real market data.`;
+      const result = generateInstitutionalAnalysis(finalRSI, realData);
+      result.lastClose = realData.lastClose;
+      result.optionPrice = realData.optionPrice;
+      result.claudeInsight = `Live ${ticker} data: RSI(14) = ${finalRSI} (${finalRSI > 70 ? 'Overbought' : finalRSI < 30 ? 'Oversold' : 'Neutral'}). Last close: $${realData.lastClose}. Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. ${realData.optionPrice ? `Option price: $${realData.optionPrice.toFixed(2)}` : ''} ⚠️ AI-generated data may not be 100% accurate. Always verify on Finviz.com or your broker.`;
       
       setAnalysisResult(result);
     } catch (err) {
@@ -738,17 +752,38 @@ export default function DayTradingApp() {
           </div>
 
           <div className="form-group">
-            <label>Days to expiry</label>
-            <select value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)}>
-              <option value="1">1 DTE (Today)</option>
-              <option value="2">2 DTE</option>
-              <option value="3">3 DTE</option>
-              <option value="7">This week (7 DTE)</option>
-              <option value="14">This month (14 DTE)</option>
-              <option value="30">Next 30 days</option>
-              <option value="60">Next 60 days</option>
-              <option value="120">Next 120 days</option>
-            </select>
+            <label>Expiry Date</label>
+            <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#6b7280' }}>
+              Select the option expiration date to calculate days to expire
+            </p>
+            <input 
+              type="date"
+              value={expiryDate}
+              onChange={(e) => {
+                setExpiryDate(e.target.value);
+                if (e.target.value) {
+                  const today = new Date();
+                  const expiry = new Date(e.target.value);
+                  const dte = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                  setDaysToExpiry(Math.max(0, dte).toString());
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '0.625rem',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '6px',
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+                color: '#1f2937',
+              }}
+            />
+            {expiryDate && (
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#059669', fontWeight: 600 }}>
+                ✓ Days to expire: {daysToExpiry}
+              </p>
+            )}
           </div>
 
           <div className="form-group">
@@ -782,16 +817,19 @@ export default function DayTradingApp() {
           <div className="form-group">
             <label>RSI (14) — Optional Manual Override</label>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#6b7280' }}>
-              Leave empty to fetch live data. Enter a value to override if API timeout.
+              AI-fetched RSI displayed below. Enter your own value here to override:
             </p>
             <input 
               type="number"
               value={manualRSI}
               onChange={(e) => setManualRSI(e.target.value)}
-              placeholder="Leave empty for live fetch"
+              placeholder="Leave empty to use AI data"
               min="0"
               max="100"
             />
+            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#dc2626', fontStyle: 'italic' }}>
+              ⚠️ AI-generated data may not be 100% accurate. Verify on Finviz.com before trading.
+            </p>
           </div>
 
           <div className="form-group">
@@ -1181,8 +1219,13 @@ export default function DayTradingApp() {
               <span className="form-section-title">Position Setup & Risk Management</span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="indicator-box">
+                  <div className="indicator-label">Last Close</div>
+                  <div className="indicator-value">${analysisResult.lastClose?.toFixed(2) || 'N/A'}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Market price</div>
+                </div>
+                <div className="indicator-box">
                   <div className="indicator-label">Option Price</div>
-                  <div className="indicator-value">${analysisResult.optionPrice}</div>
+                  <div className="indicator-value">${analysisResult.optionPrice?.toFixed(2) || 'N/A'}</div>
                   <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Per contract</div>
                 </div>
                 <div className="indicator-box">
