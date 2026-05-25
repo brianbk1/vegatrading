@@ -274,6 +274,9 @@ export default function DayTradingApp() {
       } catch (err) {
         weeklyEvents = 'Unable to fetch live economic calendar. Check Finviz.com and investing.com for this week\'s events.';
       }
+      
+      // Calculate scores - DEFINE BEFORE USING
+      const liquidityScore = 85; // QQQ/SPY are highly liquid
       const riskRewardScore = riskRewardRatio >= 2 ? 85 : riskRewardRatio >= 1 ? 70 : 45;
       const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
