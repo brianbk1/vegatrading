@@ -37,23 +37,29 @@ export default function DayTradingApp() {
       const realData = await dataResponse.json();
       console.log('Real data from API:', realData);
 
-      // Display results
+      // Parse values first
+      const rsiScore = Math.round(parseFloat(realData.rsi14 || 50));
+      const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
+      const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));
+
+      // Calculate scores
       const liquidityScore = 85; // QQQ/SPY are highly liquid
       const riskRewardScore = Math.round(Math.random() * 30 + 60); // 60-90 range
-      const technicalScore = analysisResult.rsiScore > 70 || analysisResult.rsiScore < 30 ? 75 : 60;
+      const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
 
+      // Display results
       setAnalysisResult({
         ticker,
         strikePrice: parseFloat(strikePrice),
         optionPrice: parseFloat(optionPrice),
         daysToExpiry: parseInt(daysToExpiry),
         lastClose: parseFloat(realData.lastClose),
-        rsiScore: Math.round(parseFloat(realData.rsi14 || 50)),
+        rsiScore,
         rsiInterpretation: realData.rsiInterpretation || 'Neutral',
-        stochasticK: Math.round(parseFloat(realData.stochasticK || 50)),
+        stochasticK,
         macdSignal: realData.macdSignal || 'Neutral',
-        ivPercentile: Math.round(parseFloat(realData.ivPercentile || 50)),
+        ivPercentile,
         liquidityScore,
         riskRewardScore,
         technicalScore,
