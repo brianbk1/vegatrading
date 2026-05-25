@@ -272,8 +272,10 @@ export default function DayTradingApp() {
       const result = generateInstitutionalAnalysis(finalRSI, realData);
       result.lastClose = realData.lastClose;
       result.optionPrice = realData.optionPrice;
+      result.dataSource = realData.dataSource;
       result.claudeInsight = `Live ${ticker} data: RSI(14) = ${finalRSI} (${finalRSI > 70 ? 'Overbought' : finalRSI < 30 ? 'Oversold' : 'Neutral'}). Last close: $${realData.lastClose}. Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. ${realData.optionPrice ? `Option price: $${realData.optionPrice.toFixed(2)}` : ''} ⚠️ AI-generated data may not be 100% accurate. Always verify on Finviz.com or your broker.`;
       
+      console.log('Setting analysis result:', result);
       setAnalysisResult(result);
     } catch (err) {
       setError('Error fetching market data. Using fallback mode.');
