@@ -10,9 +10,9 @@ export default function DayTradingApp() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
 
+
   const [manualRSI, setManualRSI] = useState('50');
-
-
+  const generateHistoricalData = (timeframe) => {
     const strike = parseFloat(strikePrice) || 400;
     let dataPoints = [];
     let labels = [];
@@ -46,7 +46,6 @@ export default function DayTradingApp() {
   const generateInstitutionalAnalysis = (inputRSI = 50) => {
     const strike = parseFloat(strikePrice) || 400;
     
-    // Use input RSI if provided, otherwise random
     const rsiScore = inputRSI || Math.floor(Math.random() * 100);
     const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
     
@@ -222,10 +221,9 @@ export default function DayTradingApp() {
     setError('');
     setAnalysisResult(null);
 
-    // Use manual RSI input
     setTimeout(() => {
       const result = generateInstitutionalAnalysis(parseInt(manualRSI) || 50);
-      result.claudeInsight = `${ticker} RSI(14) = ${manualRSI} (from Finviz.com). Institutional framework applied to real technical data. Verify all metrics on Finviz before trading.`;
+      result.claudeInsight = `${ticker} RSI(14) = ${manualRSI} (from Finviz.com). Institutional framework applied to real technical data.`;
       setAnalysisResult(result);
       setIsAnalyzing(false);
     }, 500);
