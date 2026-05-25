@@ -37,11 +37,6 @@ export default function DayTradingApp() {
       const realData = await dataResponse.json();
       console.log('Real data from API:', realData);
 
-      // Parse values first
-      const rsiScore = Math.round(parseFloat(realData.rsi14 || 50));
-      const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
-      const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));
-
       // Calculate Greeks (Black-Scholes approximation for day traders)
       const strikeNum = parseFloat(strikePrice);
       const currentPriceNum = parseFloat(realData.lastClose);
@@ -52,12 +47,84 @@ export default function DayTradingApp() {
       // Simplified Greeks for day trading
       const delta = Math.min(0.95, Math.max(0.05, 0.5 + (currentPriceNum - strikeNum) / strikeNum * 0.5));
       const gamma = Math.exp(-Math.pow((currentPriceNum - strikeNum) / strikeNum, 2) / 2) / (strikeNum * volatility * Math.sqrt(Math.max(1, daysNum / 365)));
-      const theta = -(optionPriceNum / (daysNum || 1)) * 0.1; // Rough theta decay per day
-      const vega = (strikeNum * gamma * Math.sqrt(Math.max(1, daysNum / 365))) / 100; // Vega per 1% IV change
+      const theta = -(optionPriceNum / (daysNum || 1)) * 0.1;
+      const vega = (strikeNum * gamma * Math.sqrt(Math.max(1, daysNum / 365))) / 100;
+
+      // Position Setup Calculations
+      const maxRiskPerContract = optionPriceNum; // Premium paid = max risk for long option
+      const maxGainPerContract = Math.max(currentPriceNum - strikeNum - optionPriceNum, 0); // ITM profit potential
+      const riskRewardRatio = maxRiskPerContract > 0 ? (maxGainPerContract / maxRiskPerContract).toFixed(2) : 0;
+      const breakEvenPrice = strikeNum + optionPriceNum;
+      const priceMove = Math.abs(breakEvenPrice - currentPriceNum);
+      const priceMovePercent = ((priceMove / currentPriceNum) * 100).toFixed(2);
+
+      // 2% Risk Rule for position sizing
+      const accountSize = 50000; // Assume $50k account for demo (can be customized)
+      const maxAccountRisk = accountSize * 0.02; // 2% of account
+      const contractsToTrade = Math.floor(maxAccountRisk / maxRiskPerContract);
+      const totalMaxRisk = contractsToTrade * maxRiskPerContract;
+      const totalMaxGain = contractsToTrade * maxGainPerContract;
+
+      // Generate Trade Thesis
+      let thesisStatement = '';
+      let thesisColor = '#374151';
+      
+      if (riskRewardRatio >= 2) {
+        thesisStatement = `✅ STRONG SETUP: `;
+      } else if (riskRewardRatio >= 1) {
+        thesisStatement = `⚠️ ACCEPTABLE SETUP: `;
+      } else {
+        thesisStatement = `❌ WEAK SETUP: `;
+      }
+
+      // Build thesis based on technicals
+      if (rsiScore > 70) {
+        thesisStatement += `RSI is overbought (${rsiScore}), suggesting potential pullback. `;
+      } else if (rsiScore < 30) {
+        thesisStatement += `RSI is oversold (${rsiScore}), suggesting potential bounce. `;
+      } else {
+        thesisStatement += `RSI is neutral (${rsiScore}), no directional bias from momentum. `;
+      }
+
+      // MACD influence
+      if (realData.macdSignal === 'Bullish Crossover') {
+        thesisStatement += `MACD bullish crossover adds upside momentum. `;
+      } else if (realData.macdSignal === 'Bearish Crossover') {
+        thesisStatement += `MACD bearish crossover suggests downside pressure. `;
+      }
+
+      // Greeks influence
+      if (delta > 0.7) {
+        thesisStatement += `High delta (${delta}) means high directional sensitivity—large moves needed for profit. `;
+      } else if (delta < 0.3) {
+        thesisStatement += `Low delta (${delta}) means low directional sensitivity—wide moves needed to make money. `;
+      }
+
+      if (theta < -0.05) {
+        thesisStatement += `High theta decay (${theta}/day) means time is working against you—requires quick decision-making. `;
+      } else {
+        thesisStatement += `Low theta decay means you have more time to be right. `;
+      }
+
+      // IV context
+      if (ivPercentile > 70) {
+        thesisStatement += `IV is elevated (${ivPercentile}th percentile)—expensive premiums, good for sellers, risky for buyers. `;
+      } else if (ivPercentile < 30) {
+        thesisStatement += `IV is suppressed (${ivPercentile}th percentile)—cheap premiums, good for buyers looking for breakouts. `;
+      }
+
+      // Final verdict
+      if (riskRewardRatio >= 2 && (rsiScore > 70 || rsiScore < 30) && daysNum >= 1) {
+        thesisStatement += `Overall: Good risk/reward with extreme RSI reading. Monitor break-even level carefully.`;
+      } else if (riskRewardRatio >= 1) {
+        thesisStatement += `Overall: Acceptable trade if technicals align at entry. Set stop loss at or above break-even.`;
+      } else {
+        thesisStatement += `Overall: Poor risk/reward. Consider waiting for better setup or reducing position size.`;
+      }
 
       // Calculate scores
       const liquidityScore = 85;
-      const riskRewardScore = Math.round(Math.random() * 30 + 60);
+      const riskRewardScore = riskRewardRatio >= 2 ? 85 : riskRewardRatio >= 1 ? 70 : 45;
       const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
 
@@ -68,7 +135,7 @@ export default function DayTradingApp() {
         optionPrice: optionPriceNum,
         daysToExpiry: daysNum,
         lastClose: currentPriceNum,
-        priceFound: realData.lastClose !== strikePrice.toString(), // True if price was fetched, not defaulted
+        priceFound: realData.lastClose !== strikePrice.toString(),
         rsiScore,
         rsiInterpretation: realData.rsiInterpretation || 'Neutral',
         stochasticK,
@@ -83,6 +150,18 @@ export default function DayTradingApp() {
         gamma: gamma.toFixed(4),
         theta: theta.toFixed(4),
         vega: vega.toFixed(3),
+        // Position Setup
+        maxRiskPerContract: maxRiskPerContract.toFixed(2),
+        maxGainPerContract: maxGainPerContract.toFixed(2),
+        riskRewardRatio,
+        breakEvenPrice: breakEvenPrice.toFixed(2),
+        priceMove: priceMove.toFixed(2),
+        priceMovePercent,
+        contractsToTrade,
+        totalMaxRisk: totalMaxRisk.toFixed(2),
+        totalMaxGain: totalMaxGain.toFixed(2),
+        // Trade Thesis
+        thesisStatement,
       });
     } catch (err) {
       console.error('Error:', err);
@@ -289,7 +368,14 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem' }}>📈 Price Chart - Last 20 Days</h3>
+            <div style={{ background: analysisResult.riskRewardRatio >= 2 ? '#ecfdf5' : analysisResult.riskRewardRatio >= 1 ? '#fffbeb' : '#fef2f2', border: `2px solid ${analysisResult.riskRewardRatio >= 2 ? '#10b981' : analysisResult.riskRewardRatio >= 1 ? '#f59e0b' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: analysisResult.riskRewardRatio >= 2 ? '#065f46' : analysisResult.riskRewardRatio >= 1 ? '#92400e' : '#7f1d1d' }}>
+                💡 Trade Thesis & Analysis
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: analysisResult.riskRewardRatio >= 2 ? '#047857' : analysisResult.riskRewardRatio >= 1 ? '#b45309' : '#991b1b' }}>
+                {analysisResult.thesisStatement}
+              </p>
+            </div>
             <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', overflow: 'auto' }}>
               <svg viewBox="0 0 500 250" style={{ width: '100%', height: 'auto', minHeight: '200px' }}>
                 {/* Grid lines */}
@@ -345,6 +431,54 @@ export default function DayTradingApp() {
                 </p>
               </div>
             )}
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem' }}>💰 Position Setup & Risk Management</h3>
+            <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Max Risk Per Contract</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.maxRiskPerContract}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Premium paid = max loss</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Max Gain Per Contract</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>${analysisResult.maxGainPerContract}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Intrinsic value at expiry</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem', borderTop: '1px solid #d1d5db', paddingTop: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Risk/Reward Ratio</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.riskRewardRatio >= 2 ? '#10b981' : analysisResult.riskRewardRatio >= 1 ? '#f59e0b' : '#ef4444' }}>
+                    1:{analysisResult.riskRewardRatio}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                    {analysisResult.riskRewardRatio >= 2 ? '✅ Excellent' : analysisResult.riskRewardRatio >= 1 ? '⚠️ Fair' : '❌ Poor'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Break-Even Price</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.breakEvenPrice}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                    {analysisResult.priceMovePercent}% move needed
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', borderTop: '1px solid #d1d5db', paddingTop: '1.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Contracts to Trade (2% Risk)</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.contractsToTrade}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>At $50K account size</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Total Account Risk</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.totalMaxRisk}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Max loss if wrong</div>
+                </div>
+              </div>
+            </div>
 
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem' }}>⚡ The Greeks</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
