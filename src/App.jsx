@@ -425,6 +425,8 @@ export default function DayTradingApp() {
                 )}
               </div>
             </div>
+
+            <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
                 ⚠️ This is educational analysis only. Not financial advice. Always verify data on your broker before trading.
               </p>
