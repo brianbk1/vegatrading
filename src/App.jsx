@@ -37,6 +37,11 @@ export default function DayTradingApp() {
       const realData = await dataResponse.json();
       console.log('Real data from API:', realData);
 
+      // Parse values first (BEFORE using them)
+      const rsiScore = Math.round(parseFloat(realData.rsi14 || 50));
+      const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
+      const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));
+
       // Calculate Greeks (Black-Scholes approximation for day traders)
       const strikeNum = parseFloat(strikePrice);
       const currentPriceNum = parseFloat(realData.lastClose);
