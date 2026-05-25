@@ -7,13 +7,11 @@ export default function DayTradingApp() {
   const [strikePrice, setStrikePrice] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [thesis, setThesis] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
 
-
-  const [manualRSI, setManualRSI] = useState('50');
   const generateHistoricalData = (timeframe) => {
     const strike = parseFloat(strikePrice) || 400;
+  const [error, setError] = useState('');
+  const [chartTimeframe, setChartTimeframe] = useState('today');
     let dataPoints = [];
     let labels = [];
     
