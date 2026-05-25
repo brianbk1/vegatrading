@@ -429,6 +429,8 @@ export default function DayTradingApp() {
                 </p>
               </div>
             </div>
+
+            <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', overflow: 'auto' }}>
               <svg viewBox="0 0 500 250" style={{ width: '100%', height: 'auto', minHeight: '200px' }}>
                 {/* Grid lines */}
                 <line x1="40" y1="20" x2="40" y2="200" stroke="#d1d5db" strokeWidth="1" />
