@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle, Zap, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react';
 
-// Vega Day Trading Analyzer v1.2 - Real Polygon data with novice trader guidance
+// Vega Day Trading Analyzer v1.3 - Real Polygon data with novice trader guidance + Google Ads
 export default function DayTradingApp() {
+  
+  // Initialize Google Ads
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_GOOGLE_AD_CLIENT_ID';
+    script.setAttribute('crossOrigin', 'anonymous');
+    document.head.appendChild(script);
+
+    // Push ads config
+    window.adsbygoogle = window.adsbygoogle || [];
+    window.adsbygoogle.push({
+      google_ad_client: 'ca-pub-YOUR_GOOGLE_AD_CLIENT_ID',
+      enable_page_level_ads: true
+    });
+  }, []);
+
   // Form inputs
   const [ticker, setTicker] = useState('QQQ');
   const [optionType, setOptionType] = useState('call');
@@ -449,6 +466,7 @@ export default function DayTradingApp() {
           justify-content: center;
           color: white;
           font-weight: bold;
+          font-size: 1.1rem;
         }
         
         .header p {
@@ -539,7 +557,7 @@ export default function DayTradingApp() {
         .btn-analyze {
           width: 100%;
           padding: 0.875rem;
-          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+          background: linear-gradient(135deg, #00c8c8 0%, #00a8a8 100%);
           color: white;
           border: none;
           border-radius: 8px;
@@ -548,11 +566,16 @@ export default function DayTradingApp() {
           cursor: pointer;
           transition: all 0.2s;
           margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
         }
         
         .btn-analyze:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+          box-shadow: 0 4px 12px rgba(0, 200, 200, 0.4);
+          background: linear-gradient(135deg, #00a8a8 0%, #008888 100%);
         }
         
         .btn-analyze:disabled {
@@ -565,6 +588,15 @@ export default function DayTradingApp() {
           flex-direction: column;
           gap: 1rem;
         }
+
+        /* Google Ads */
+        .ad-container {
+          margin: 1.5rem 0;
+          text-align: center;
+          background: #f9fafb;
+          padding: 1rem;
+          border-radius: 8px;
+        }
       `}</style>
 
       <div className="app-container">
@@ -575,6 +607,19 @@ export default function DayTradingApp() {
             <h1>Vega Analyzer</h1>
           </div>
           <p>Real-time options analysis with risk management</p>
+        </div>
+
+        {/* Google Ads - Top */}
+        <div className="ad-container">
+          <ins className="adsbygoogle"
+            style={{ display: 'block' }}
+            data-ad-client="ca-pub-YOUR_GOOGLE_AD_CLIENT_ID"
+            data-ad-slot="1234567890"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+          <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+          </script>
         </div>
 
         {/* Form Card */}
@@ -678,7 +723,16 @@ export default function DayTradingApp() {
                 borderRadius: '6px',
                 textDecoration: 'none',
                 fontWeight: 600,
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 4px 12px rgba(255, 107, 53, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = 'none';
               }}
             >
               📊 View {ticker} on Finviz →
@@ -705,7 +759,8 @@ export default function DayTradingApp() {
             onClick={handleAnalyze}
             disabled={isAnalyzing}
           >
-            {isAnalyzing ? '⏳ Analyzing...' : '🚀 ANALYZE TRADE'}
+            <span>⚡</span>
+            {isAnalyzing ? 'Analyzing...' : 'ANALYZE TRADE'}
           </button>
 
           {error && (
@@ -727,6 +782,19 @@ export default function DayTradingApp() {
             
             {/* Position Setup Summary - NEW */}
             <PositionSetupSummary />
+
+            {/* Google Ads - Middle */}
+            <div className="ad-container">
+              <ins className="adsbygoogle"
+                style={{ display: 'block' }}
+                data-ad-client="ca-pub-YOUR_GOOGLE_AD_CLIENT_ID"
+                data-ad-slot="0987654321"
+                data-ad-format="auto"
+                data-full-width-responsive="true"></ins>
+              <script>
+                (adsbygoogle = window.adsbygoogle || []).push({});
+              </script>
+            </div>
 
             {/* Trade Quality Score */}
             <div className="card">
@@ -831,7 +899,7 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            {/* Momentum Indicators */}
+            {/* Technical Indicators */}
             <div className="card">
               <span className="form-section-title">Technical Indicators</span>
               
@@ -913,6 +981,19 @@ export default function DayTradingApp() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Google Ads - Bottom */}
+            <div className="ad-container">
+              <ins className="adsbygoogle"
+                style={{ display: 'block' }}
+                data-ad-client="ca-pub-YOUR_GOOGLE_AD_CLIENT_ID"
+                data-ad-slot="5555555555"
+                data-ad-format="auto"
+                data-full-width-responsive="true"></ins>
+              <script>
+                (adsbygoogle = window.adsbygoogle || []).push({});
+              </script>
             </div>
 
             {/* Disclaimer */}
