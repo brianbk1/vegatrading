@@ -958,6 +958,11 @@ export default function DayTradingApp() {
                 <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', padding: '1rem', borderRadius: '8px', color: '#1e40af', fontSize: '0.9rem', lineHeight: '1.6' }}>
                   {analysisResult.claudeInsight}
                 </div>
+                {analysisResult.dataSource && (
+                  <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', fontSize: '0.75rem', color: '#047857' }}>
+                    📊 Data source: <strong>{analysisResult.dataSource === 'polygon' ? 'Polygon.io (Real Market)' : analysisResult.dataSource === 'yahoo' ? 'Yahoo Finance (Real Market)' : analysisResult.dataSource === 'claude' ? 'Claude AI (Estimated)' : 'Fallback (Manual Entry)'}</strong>
+                  </div>
+                )}
               </div>
             )}
 
