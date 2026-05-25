@@ -14,18 +14,18 @@ export default async function handler(req, res) {
 
   let data = {
     ticker: ticker,
-    lastClose: strikePrice ? parseFloat(strikePrice) : 725,
+    lastClose: strikePrice ? parseFloat(strikePrice).toFixed(2) : "725.00",
     rsi14: 50,
     rsiInterpretation: "Neutral",
     macdSignal: "Neutral",
     stochasticK: 50,
     stochasticD: 50,
-    bollingerUpper: strikePrice ? parseFloat(strikePrice) + 15 : 740,
-    bollingerLower: strikePrice ? parseFloat(strikePrice) - 15 : 710,
+    bollingerUpper: strikePrice ? (parseFloat(strikePrice) + 15).toFixed(2) : "740.00",
+    bollingerLower: strikePrice ? (parseFloat(strikePrice) - 15).toFixed(2) : "710.00",
     bbPosition: "Middle",
     ivPercentile: 50,
-    optionPrice: optionPrice ? parseFloat(optionPrice) : 54,
-    currentPrice: strikePrice ? parseFloat(strikePrice) : 725,
+    optionPrice: optionPrice ? parseFloat(optionPrice).toFixed(2) : "54.00",
+    currentPrice: strikePrice ? parseFloat(strikePrice).toFixed(2) : "725.00",
     dataSource: "fallback"
   };
 
@@ -37,26 +37,32 @@ export default async function handler(req, res) {
       console.log(`[Polygon] API Key present: ${polygonKey ? 'YES' : 'NO'}`);
       
       if (polygonKey) {
-        // Get latest quote
+        // Get latest quote using v3 endpoint (more reliable for current prices)
         console.log(`[Polygon] Fetching latest quote for ${ticker}...`);
         const quoteRes = await fetch(
-          `https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/ticker/${ticker}?apikey=${polygonKey}`
+          `https://api.polygon.io/v3/quotes/${ticker}?apikey=${polygonKey}`
         );
         
         console.log(`[Polygon] Quote response status: ${quoteRes.status}`);
         
         if (quoteRes.ok) {
           const quoteData = await quoteRes.json();
-          if (quoteData.status === 'OK' && quoteData.results) {
-            const price = quoteData.results.last?.price || quoteData.results.prevClose;
-            if (price) {
-              data.lastClose = price;
-              data.currentPrice = price;
-              console.log(`[Polygon] ✅ Got stock price: $${price}`);
+          console.log(`[Polygon] Quote response:`, JSON.stringify(quoteData.results));
+          
+          if (quoteData.results) {
+            // Extract the most accurate current price
+            const currentPrice = quoteData.results.last_price || 
+                               quoteData.results.last?.price ||
+                               quoteData.results.c;
+            
+            if (currentPrice && currentPrice > 0) {
+              data.lastClose = parseFloat(currentPrice).toFixed(2);
+              data.currentPrice = parseFloat(currentPrice).toFixed(2);
+              console.log(`[Polygon] ✅ Got REAL stock price: $${data.lastClose}`);
             }
           }
         } else {
-          console.log(`[Polygon] Quote request failed, status: ${quoteRes.status}`);
+          console.log(`[Polygon] Quote failed (status ${quoteRes.status}), will try RSI...`);
         }
         
         // Get DAILY RSI (not minute RSI)
@@ -96,7 +102,7 @@ export default async function handler(req, res) {
         
         // Use user's option price if provided
         if (optionPrice) {
-          data.optionPrice = parseFloat(optionPrice);
+          data.optionPrice = parseFloat(optionPrice).toFixed(2);
           console.log(`[Polygon] ✅ Using user-provided option price: $${data.optionPrice}`);
         }
         
@@ -154,7 +160,7 @@ Return ONLY the JSON object.`,
       data.ivPercentile = claudeData.ivPercentile || data.ivPercentile;
       
       if (optionPrice) {
-        data.optionPrice = parseFloat(optionPrice);
+        data.optionPrice = parseFloat(optionPrice).toFixed(2);
       }
       
       data.dataSource = "claude";
@@ -167,7 +173,7 @@ Return ONLY the JSON object.`,
     // METHOD 3: Return fallback
     console.log(`[Fallback] Using fallback data`);
     if (optionPrice) {
-      data.optionPrice = parseFloat(optionPrice);
+      data.optionPrice = parseFloat(optionPrice).toFixed(2);
     }
     data.dataSource = "fallback";
     return res.status(200).json(data);
