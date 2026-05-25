@@ -65,7 +65,8 @@ export default function DayTradingApp() {
       const priceMove = Math.abs(breakEvenPrice - currentPriceNum);
       const priceMovePercent = ((priceMove / currentPriceNum) * 100).toFixed(2);
 
-      // 2% Risk Rule for position sizing - USE USER'S ACCOUNT SIZE
+      // 2% Risk Rule for position sizing
+      const accountSize = 50000; // Assume $50k account for demo (can be customized)
       const maxAccountRisk = accountSize * 0.02; // 2% of account
       const contractsToTrade = Math.floor(maxAccountRisk / maxRiskPerContract);
       const totalMaxRisk = contractsToTrade * maxRiskPerContract;
@@ -224,9 +225,6 @@ export default function DayTradingApp() {
           percentLoss: percentLossFromIVCrush
         };
       });
-      
-      // Calculate scores
-      const liquidityScore = 85; // QQQ/SPY are highly liquid
       const riskRewardScore = riskRewardRatio >= 2 ? 85 : riskRewardRatio >= 1 ? 70 : 45;
       const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
@@ -269,9 +267,6 @@ export default function DayTradingApp() {
         thesisAnalysis,
         // IV Crush
         ivCrushImpact,
-        // Account & Export Data
-        accountSize,
-        timestamp: new Date().toLocaleString(),
       });
     } catch (err) {
       console.error('Error:', err);
@@ -281,88 +276,14 @@ export default function DayTradingApp() {
     }
   };
 
-  const exportToCSV = () => {
-    if (!analysisResult) return;
-    
-    const headers = ['Timestamp', 'Ticker', 'Strike Price', 'Current Price', 'Option Price', 'Days to Expiry', 'Account Size', 'Max Risk/Contract', 'Max Gain/Contract', 'Contracts to Trade', 'Total Risk', 'Total Gain', 'Risk/Reward Ratio', 'RSI', 'MACD', 'Trade Quality Score', 'User Thesis'];
-    
-    const row = [
-      analysisResult.timestamp,
-      analysisResult.ticker,
-      analysisResult.strikePrice,
-      analysisResult.lastClose,
-      analysisResult.optionPrice,
-      analysisResult.daysToExpiry,
-      analysisResult.accountSize,
-      analysisResult.maxRiskPerContract,
-      analysisResult.maxGainPerContract,
-      analysisResult.contractsToTrade,
-      analysisResult.totalMaxRisk,
-      analysisResult.totalMaxGain,
-      analysisResult.riskRewardRatio,
-      analysisResult.rsiScore,
-      analysisResult.macdSignal,
-      analysisResult.overallScore,
-      `"${analysisResult.userThesis}"`
-    ];
-    
-    const csvContent = headers.join(',') + '\n' + row.join(',');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vega-trade-${analysisResult.ticker}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const exportToJSON = () => {
-    if (!analysisResult) return;
-    
-    const jsonData = {
-      timestamp: analysisResult.timestamp,
-      ticker: analysisResult.ticker,
-      strikePrice: analysisResult.strikePrice,
-      currentPrice: analysisResult.lastClose,
-      optionPrice: analysisResult.optionPrice,
-      daysToExpiry: analysisResult.daysToExpiry,
-      accountSize: analysisResult.accountSize,
-      positionSetup: {
-        maxRiskPerContract: analysisResult.maxRiskPerContract,
-        maxGainPerContract: analysisResult.maxGainPerContract,
-        contractsToTrade: analysisResult.contractsToTrade,
-        totalMaxRisk: analysisResult.totalMaxRisk,
-        totalMaxGain: analysisResult.totalMaxGain,
-        riskRewardRatio: analysisResult.riskRewardRatio,
-        breakEvenPrice: analysisResult.breakEvenPrice
-      },
-      technicals: {
-        rsi: analysisResult.rsiScore,
-        macd: analysisResult.macdSignal,
-        stochastic: analysisResult.stochasticK,
-        iv: analysisResult.ivPercentile
-      },
-      greeks: {
-        delta: analysisResult.delta,
-        gamma: analysisResult.gamma,
-        theta: analysisResult.theta,
-        vega: analysisResult.vega
-      },
-      analysis: {
-        tradeQualityScore: analysisResult.overallScore,
-        aiThesis: analysisResult.thesisStatement,
-        userThesis: analysisResult.userThesis,
-        catalystAnalysis: analysisResult.thesisAnalysis
-      }
-    };
-    
-    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vega-trade-${analysisResult.ticker}-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const reset = () => {
+    setStrikePrice('');
+    setOptionPrice('');
+    setDaysToExpiry('1');
+    setUserThesis('');
+    setAccountSize(50000);
+    setAnalysisResult(null);
+    setError('');
   };
 
   return (
@@ -429,20 +350,7 @@ export default function DayTradingApp() {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>📊 Account Size ($)</label>
-              <input
-                type="number"
-                value={accountSize}
-                onChange={(e) => setAccountSize(parseFloat(e.target.value) || 50000)}
-                min="1000"
-                step="1000"
-                placeholder="50000"
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
-              />
-              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>For calculating 2% risk position size (default: $50,000)</div>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>📝 Why This Trade? (Your Thesis)</label>
               <textarea
                 value={userThesis}
                 onChange={(e) => setUserThesis(e.target.value)}
@@ -531,39 +439,6 @@ export default function DayTradingApp() {
             >
               ← Back to Form
             </button>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <button
-                onClick={exportToCSV}
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
-                📥 Export to CSV
-              </button>
-              <button
-                onClick={exportToJSON}
-                style={{
-                  padding: '0.75rem 1rem',
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
-                📥 Export to JSON
-              </button>
-            </div>
 
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>
               Analysis Results
@@ -759,7 +634,7 @@ export default function DayTradingApp() {
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Contracts to Trade (2% Risk)</div>
                   <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.contractsToTrade}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>At ${(analysisResult.accountSize / 1000).toFixed(0)}K account</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>At $50K account size</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Total Account Risk</div>
