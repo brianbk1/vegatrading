@@ -5,6 +5,7 @@ export default function DayTradingApp() {
   const [strikePrice, setStrikePrice] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionPrice, setOptionPrice] = useState('');
+  const [userThesis, setUserThesis] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
@@ -167,6 +168,7 @@ export default function DayTradingApp() {
         totalMaxGain: totalMaxGain.toFixed(2),
         // Trade Thesis
         thesisStatement,
+        userThesis,
       });
     } catch (err) {
       console.error('Error:', err);
@@ -180,6 +182,7 @@ export default function DayTradingApp() {
     setStrikePrice('');
     setOptionPrice('');
     setDaysToExpiry('1');
+    setUserThesis('');
     setAnalysisResult(null);
     setError('');
   };
@@ -245,6 +248,17 @@ export default function DayTradingApp() {
                 min="1"
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
               />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>📝 Why This Trade? (Your Thesis)</label>
+              <textarea
+                value={userThesis}
+                onChange={(e) => setUserThesis(e.target.value)}
+                placeholder="e.g., QQQ showing overbought RSI (71) with bearish MACD crossover. Expecting pullback to $715 support. High IV (75th percentile) suggests event risk. Taking 725 put for defined risk..."
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', fontFamily: 'monospace', minHeight: '80px', resize: 'vertical' }}
+              />
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Be specific about your reasoning, technicals, and risk.</div>
             </div>
 
             {error && (
@@ -381,7 +395,40 @@ export default function DayTradingApp() {
                 {analysisResult.thesisStatement}
               </p>
             </div>
-            <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', overflow: 'auto' }}>
+
+            {analysisResult.userThesis && (
+              <div style={{ background: '#f3f4f6', border: '2px solid #9ca3af', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#374151' }}>
+                  📌 Your Trade Thesis
+                </h3>
+                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: '#4b5563', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                  {analysisResult.userThesis}
+                </p>
+              </div>
+            )}
+
+            <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>
+                📰 Market News & Events Impact
+              </h3>
+              <div style={{ fontSize: '0.9rem', color: '#78350f', lineHeight: '1.8' }}>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>📊 Upcoming Catalysts:</strong> Monitor the Federal Reserve's next FOMC decision, CPI releases (typically 2nd Wednesday of month), and non-farm payroll reports (1st Friday). These events cause volatility spikes and can impact option pricing significantly.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>🏢 Earnings Impact:</strong> If {analysisResult.ticker} has earnings before your expiration date, expect IV expansion before the event and potential gap moves afterward. Check <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#b45309', textDecoration: 'underline', fontWeight: 600 }}>Finviz</a> for earnings calendar.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>💰 Rate Environment:</strong> {analysisResult.ivPercentile > 60 ? 'High IV suggests market uncertainty—consider if rate guidance or inflation data expected.' : 'Normal IV—focus on technicals and individual stock catalysts.'}
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>📈 Sector Rotation:</strong> {analysisResult.ticker === 'QQQ' || analysisResult.ticker === 'NVDA' || analysisResult.ticker === 'TSLA' ? 'Tech sector sensitive to rate expectations. Watch 10Y Treasury yields and Fed fund futures.' : analysisResult.ticker === 'XLF' ? 'Financials tied to interest rate outlook. Monitor yield curve.' : 'Monitor sector-specific catalysts.'}
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>⚠️ Risk Note:</strong> If your expiration is around major economic events (FOMC, earnings, Fed speakers), IV crush risk increases. Your theta decay may be offset by IV expansion if volatility expectations shift.
+                </p>
+              </div>
+            </div>
               <svg viewBox="0 0 500 250" style={{ width: '100%', height: 'auto', minHeight: '200px' }}>
                 {/* Grid lines */}
                 <line x1="40" y1="20" x2="40" y2="200" stroke="#d1d5db" strokeWidth="1" />
