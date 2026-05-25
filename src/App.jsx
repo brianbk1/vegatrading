@@ -321,13 +321,18 @@ export default function DayTradingApp() {
     if (!analysisResult) return null;
     
     const [isExpanded, setIsExpanded] = useState(false);
-    const riskRewardRatio = parseFloat(analysisResult.riskRewardRatio);
-    const maxRisk = parseFloat(analysisResult.maxLoss);
-    const lastClose = parseFloat(analysisResult.lastClose);
-    const breakEven = parseFloat(analysisResult.beCall);
+    const riskRewardRatio = parseFloat(analysisResult.riskRewardRatio) || 0;
+    const maxRisk = parseFloat(analysisResult.maxLoss) || 0;
+    const lastClose = parseFloat(analysisResult.lastClose) || 0;
+    const breakEven = parseFloat(analysisResult.beCall) || 0;
+    const optionPrice = parseFloat(analysisResult.optionPrice) || maxRisk;
+    const maxGain = parseFloat(analysisResult.maxGain) || 0;
+    const contractsToTrade = analysisResult.contractsToTrade || 1;
+    const ivCrushPercent = parseInt(analysisResult.ivCrushPercent) || 0;
+    const pricePostCrush = parseFloat(analysisResult.pricePostCrush) || 0;
 
     const priceMove = breakEven - lastClose;
-    const priceMovePercent = ((priceMove / lastClose) * 100).toFixed(2);
+    const priceMovePercent = lastClose > 0 ? ((priceMove / lastClose) * 100).toFixed(2) : '0';
 
     return (
       <div style={{
@@ -372,18 +377,18 @@ export default function DayTradingApp() {
         }}>
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Last Close</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(lastClose).toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${lastClose.toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Market price</p>
           </div>
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Option Price</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(analysisResult.optionPrice || maxRisk).toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${optionPrice.toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
           </div>
 
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Contracts to Trade</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff6b35' }}>{analysisResult.contractsToTrade}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff6b35' }}>{contractsToTrade}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>At 2% risk</p>
           </div>
           <div>
@@ -394,7 +399,7 @@ export default function DayTradingApp() {
 
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Max Reward</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>${parseFloat(analysisResult.maxGain).toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>${maxGain.toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
           </div>
           <div>
@@ -414,12 +419,12 @@ export default function DayTradingApp() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>IV Crush %</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>-{analysisResult.ivCrushPercent}%</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>-{ivCrushPercent}%</div>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Typical decline</p>
               </div>
               <div>
                 <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>Price After Crush</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>${parseFloat(analysisResult.pricePostCrush).toFixed(2)}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>${pricePostCrush.toFixed(2)}</div>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Est. value</p>
               </div>
             </div>
@@ -1103,8 +1108,8 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            {/* POSITION SETUP & RISK MANAGEMENT */}
-            <PositionSetupSummary />
+            {/* POSITION SETUP & RISK MANAGEMENT - TEMPORARILY DISABLED FOR DEBUGGING */}
+            {/* <PositionSetupSummary /> */}
 
             {/* OVERALL SCORE */}
             <div className="card">
