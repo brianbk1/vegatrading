@@ -474,6 +474,8 @@ export default function DayTradingApp() {
                 Blue dots = historical daily closes | Orange dash = current price | Red dash = strike price
               </p>
             </div>
+
+            {!analysisResult.priceFound && (
               <div style={{ background: '#fee2e2', border: '2px solid #dc2626', borderRadius: '8px', padding: '1rem', marginBottom: '2rem' }}>
                 <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#991b1b', fontWeight: 600 }}>
                   ⚠️ PRICE DATA NOT AVAILABLE
