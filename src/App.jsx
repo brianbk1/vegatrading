@@ -252,10 +252,7 @@ export default function DayTradingApp() {
       if (dataResponse.ok) {
         realData = await dataResponse.json();
         console.log('Real data from API:', realData);
-        console.log('Real data RSI:', realData.rsi14);
-        console.log('Real data type:', typeof realData.rsi14);
         apiRSI = realData.rsi14; // Store the API RSI value
-        console.log('API RSI stored:', apiRSI);
       } else {
         console.error('API error, status:', dataResponse.status);
       }
@@ -281,10 +278,8 @@ export default function DayTradingApp() {
 
       // Use manual RSI override if provided, otherwise use API RSI
       const finalRSI = manualRSI && parseInt(manualRSI) > 0 ? parseInt(manualRSI) : (apiRSI || realData.rsi14);
-      console.log('manualRSI:', manualRSI);
-      console.log('apiRSI:', apiRSI);
-      console.log('realData.rsi14:', realData.rsi14);
-      console.log('finalRSI being used:', finalRSI);
+      
+      // Ensure optionPrice is a number, not a string
       if (realData.optionPrice) {
         realData.optionPrice = parseFloat(realData.optionPrice);
       }
@@ -326,18 +321,13 @@ export default function DayTradingApp() {
     if (!analysisResult) return null;
     
     const [isExpanded, setIsExpanded] = useState(false);
-    const riskRewardRatio = parseFloat(analysisResult.riskRewardRatio) || 0;
-    const maxRisk = parseFloat(analysisResult.maxLoss) || 0;
-    const lastClose = parseFloat(analysisResult.lastClose) || 0;
-    const breakEven = parseFloat(analysisResult.beCall) || 0;
-    const optionPrice = parseFloat(analysisResult.optionPrice) || maxRisk;
-    const maxGain = parseFloat(analysisResult.maxGain) || 0;
-    const contractsToTrade = analysisResult.contractsToTrade || 1;
-    const ivCrushPercent = parseInt(analysisResult.ivCrushPercent) || 0;
-    const pricePostCrush = parseFloat(analysisResult.pricePostCrush) || 0;
+    const riskRewardRatio = parseFloat(analysisResult.riskRewardRatio);
+    const maxRisk = parseFloat(analysisResult.maxLoss);
+    const lastClose = parseFloat(analysisResult.lastClose);
+    const breakEven = parseFloat(analysisResult.beCall);
 
     const priceMove = breakEven - lastClose;
-    const priceMovePercent = lastClose > 0 ? ((priceMove / lastClose) * 100).toFixed(2) : '0';
+    const priceMovePercent = ((priceMove / lastClose) * 100).toFixed(2);
 
     return (
       <div style={{
@@ -382,18 +372,18 @@ export default function DayTradingApp() {
         }}>
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Last Close</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${lastClose.toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(lastClose).toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Market price</p>
           </div>
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Option Price</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${optionPrice.toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1f2937' }}>${parseFloat(analysisResult.optionPrice || maxRisk).toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
           </div>
 
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Contracts to Trade</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff6b35' }}>{contractsToTrade}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff6b35' }}>{analysisResult.contractsToTrade}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>At 2% risk</p>
           </div>
           <div>
@@ -404,7 +394,7 @@ export default function DayTradingApp() {
 
           <div>
             <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Max Reward</p>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>${maxGain.toFixed(2)}</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>${parseFloat(analysisResult.maxGain).toFixed(2)}</div>
             <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.7rem', color: '#6b7280' }}>Per contract</p>
           </div>
           <div>
@@ -424,12 +414,12 @@ export default function DayTradingApp() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>IV Crush %</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>-{ivCrushPercent}%</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>-{analysisResult.ivCrushPercent}%</div>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Typical decline</p>
               </div>
               <div>
                 <p style={{ margin: '0 0 0.3rem 0', fontSize: '0.7rem', color: '#92400e' }}>Price After Crush</p>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>${pricePostCrush.toFixed(2)}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#92400e' }}>${parseFloat(analysisResult.pricePostCrush).toFixed(2)}</div>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.65rem', color: '#92400e' }}>Est. value</p>
               </div>
             </div>
@@ -1113,8 +1103,8 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            {/* POSITION SETUP & RISK MANAGEMENT - TEMPORARILY DISABLED FOR DEBUGGING */}
-            {/* <PositionSetupSummary /> */}
+            {/* POSITION SETUP & RISK MANAGEMENT */}
+            <PositionSetupSummary />
 
             {/* OVERALL SCORE */}
             <div className="card">
@@ -1122,7 +1112,7 @@ export default function DayTradingApp() {
               <div style={{ textAlign: 'center', padding: '1rem 0' }}>
                 <div className="score-badge">{analysisResult.overallScore}/100</div>
                 <p style={{ margin: '0.75rem 0 0 0', color: '#6b7280', fontSize: '0.85rem' }}>
-                  {parseInt(analysisResult.overallScore) > 75 ? '🟢 Institutional Grade' : parseInt(analysisResult.overallScore) > 60 ? '🟡 Trade Worthy' : '🔴 Caution'}
+                  {analysisResult.overallScore > 75 ? '🟢 Institutional Grade' : analysisResult.overallScore > 60 ? '🟡 Trade Worthy' : '🔴 Caution'}
                 </p>
               </div>
               
@@ -1138,10 +1128,10 @@ export default function DayTradingApp() {
                 borderLeft: '3px solid #00c8c8'
               }}>
                 <strong>Why this score:</strong> {analysisResult.rsiInterpretation === 'Overbought' ? '📈 Market overbought—' : analysisResult.rsiInterpretation === 'Oversold' ? '📉 Market oversold—' : '⚖️ Market neutral—'}
-                RSI at {analysisResult.rsiScore}. Stochastic shows {parseFloat(analysisResult.stochasticK) > 50 ? 'bearish' : 'bullish'} momentum ({analysisResult.stochasticK}). 
-                {parseInt(analysisResult.ivPercentile) > 70 ? ' IV elevated (premium favorable to sellers).' : parseInt(analysisResult.ivPercentile) < 30 ? ' IV suppressed (premium cheap for buyers).' : ' IV normal range.'} 
-                {parseFloat(analysisResult.riskRewardRatio) > 2 ? ' Strong 1:' + analysisResult.riskRewardRatio + ' payoff ratio supports trade.' : ' Tight risk/reward—requires precision.'} 
-                {parseInt(analysisResult.profitProbability) > 55 ? '✅ Win rate above 55%.' : '⚠️ Win rate below 55%—higher risk trade.'}
+                RSI at {analysisResult.rsiScore}. Stochastic shows {analysisResult.stochasticK > 50 ? 'bearish' : 'bullish'} momentum ({analysisResult.stochasticK}). 
+                {analysisResult.ivPercentile > 70 ? ' IV elevated (premium favorable to sellers).' : analysisResult.ivPercentile < 30 ? ' IV suppressed (premium cheap for buyers).' : ' IV normal range.'} 
+                {analysisResult.riskRewardRatio > 2 ? ' Strong 1:' + analysisResult.riskRewardRatio + ' payoff ratio supports trade.' : ' Tight risk/reward—requires precision.'} 
+                {analysisResult.profitProbability > 55 ? '✅ Win rate above 55%.' : '⚠️ Win rate below 55%—higher risk trade.'}
               </div>
               
               <div style={{ marginTop: '1rem' }}>
@@ -1158,7 +1148,7 @@ export default function DayTradingApp() {
                     <span style={{ fontWeight: 600, color: '#ff8c42' }}>Liquidity (61):</span> Good bid-ask spreads, {analysisResult.daysToExpiry <= 3 ? 'tight spreads on short DTE' : 'reasonable volume'}.
                   </div>
                   <div style={{ marginBottom: '0.5rem' }}>
-                    <span style={{ fontWeight: 600, color: '#00c8c8' }}>Risk/Reward ({analysisResult.riskRewardScore}):</span> Ratio 1:{analysisResult.riskRewardRatio} — {parseFloat(analysisResult.riskRewardRatio) > 2 ? '✅ favorable payoff' : parseFloat(analysisResult.riskRewardRatio) > 1.5 ? '⚠️ acceptable risk/reward' : '❌ tight margins'}.
+                    <span style={{ fontWeight: 600, color: '#00c8c8' }}>Risk/Reward ({analysisResult.riskRewardScore}):</span> Ratio 1:{analysisResult.riskRewardRatio} — {analysisResult.riskRewardRatio > 2 ? '✅ favorable payoff' : analysisResult.riskRewardRatio > 1.5 ? '⚠️ acceptable risk/reward' : '❌ tight margins'}.
                   </div>
                   <div>
                     <span style={{ fontWeight: 600, color: '#ef4444' }}>Technical ({analysisResult.technicalScore}):</span> {analysisResult.macdSignal} + {analysisResult.macdMomentum} momentum. {analysisResult.bollingerBands.position}. {analysisResult.rsiInterpretation} ({analysisResult.rsiScore}).
@@ -1323,7 +1313,7 @@ export default function DayTradingApp() {
                 <div className="indicator-box">
                   <div className="indicator-label">RSI (14)</div>
                   <div className="indicator-value">{analysisResult.rsiScore}</div>
-                  <div style={{ fontSize: '0.75rem', color: parseFloat(analysisResult.rsiScore) > 70 ? '#ef4444' : parseFloat(analysisResult.rsiScore) < 30 ? '#00c8c8' : '#6b7280', marginTop: '0.25rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.75rem', color: analysisResult.rsiScore > 70 ? '#ef4444' : analysisResult.rsiScore < 30 ? '#00c8c8' : '#6b7280', marginTop: '0.25rem', fontWeight: 600 }}>
                     {analysisResult.rsiInterpretation}
                   </div>
                 </div>
