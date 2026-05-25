@@ -96,6 +96,12 @@ export default function DayTradingApp() {
 
         {!analysisResult ? (
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e', fontWeight: 600 }}>
+                ⚠️ DISCLAIMER: This tool is for research and educational purposes only. It is NOT financial advice. Do your own research, consult a licensed advisor, and never risk more than you can afford to lose. Past performance does not guarantee future results. Options trading carries substantial risk.
+              </p>
+            </div>
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <input
@@ -271,6 +277,30 @@ export default function DayTradingApp() {
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
                 ⚠️ This is educational analysis only. Not financial advice. Always verify data on your broker before trading.
               </p>
+            </div>
+
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginTop: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>📚 How to Use This Tool</h3>
+              <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>1. Enter Your Data:</strong> Select a ticker, enter the strike price and option price from your broker (not estimated).
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>2. Review Technical Indicators:</strong> Check RSI (Relative Strength Index), MACD, and Stochastic readings. RSI above 70 = Overbought, below 30 = Oversold.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>3. Check Trade Quality Score:</strong> A score above 75 is institutional-grade, 60-74 is tradeable, below 60 requires caution. Scores are based on Liquidity, Risk/Reward ratio, and Technical alignment.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>4. Verify on Finviz:</strong> Always cross-check technical indicators on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>5. Risk Management:</strong> Only trade with capital you can afford to lose. Use defined-risk strategies and set stop losses before entering any trade.
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>⚠️ Remember:</strong> Past performance does not guarantee future results. AI-generated analysis may not be 100% accurate. This is education only, not a recommendation to buy or sell.
+                </p>
+              </div>
             </div>
           </div>
         )}
