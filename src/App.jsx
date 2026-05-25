@@ -7,11 +7,15 @@ export default function DayTradingApp() {
   const [strikePrice, setStrikePrice] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [thesis, setThesis] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [error, setError] = useState('');
+
+  const [chartTimeframe, setChartTimeframe] = useState('today');
+  const [manualRSI, setManualRSI] = useState('50');
 
   const generateHistoricalData = (timeframe) => {
     const strike = parseFloat(strikePrice) || 400;
-  const [error, setError] = useState('');
-  const [chartTimeframe, setChartTimeframe] = useState('today');
     let dataPoints = [];
     let labels = [];
     
@@ -44,6 +48,7 @@ export default function DayTradingApp() {
   const generateInstitutionalAnalysis = (inputRSI = 50) => {
     const strike = parseFloat(strikePrice) || 400;
     
+    // Use input RSI if provided, otherwise random
     const rsiScore = inputRSI || Math.floor(Math.random() * 100);
     const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
     
@@ -221,7 +226,7 @@ export default function DayTradingApp() {
 
     setTimeout(() => {
       const result = generateInstitutionalAnalysis(parseInt(manualRSI) || 50);
-      result.claudeInsight = `${ticker} RSI(14) = ${manualRSI} (from Finviz.com). Institutional framework applied to real technical data.`;
+      result.claudeInsight = `${ticker} RSI(14) = ${manualRSI} (from Finviz.com). Institutional framework applied to real technical data. Verify all metrics on Finviz before trading.`;
       setAnalysisResult(result);
       setIsAnalyzing(false);
     }, 500);
