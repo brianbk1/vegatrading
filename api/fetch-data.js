@@ -29,8 +29,59 @@ export default async function handler(req, res) {
   };
 
   try {
-    // METHOD 1: Try to fetch from Yahoo Finance for real closing price
-    console.log(`[Yahoo] Attempting to fetch data for ${ticker}...`);
+    // METHOD 1: Try Finnhub for real option data
+    console.log(`[Finnhub] Attempting to fetch option data for ${ticker} ${strikePrice} call...`);
+    try {
+      const finnhubKey = process.env.FINNHUB_API_KEY;
+      if (finnhubKey && strikePrice && expiryDate) {
+        // Parse expiry date to get unix timestamp
+        const expiryTime = new Date(expiryDate).getTime() / 1000;
+        
+        const finnhubRes = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${finnhubKey}`
+        );
+        
+        if (finnhubRes.ok) {
+          const quoteData = await finnhubRes.json();
+          if (quoteData.c) {
+            data.lastClose = quoteData.c;
+            data.currentPrice = quoteData.c;
+            console.log(`[Finnhub] Got stock price: $${quoteData.c}`);
+            
+            // Now try to get option chain
+            const optionRes = await fetch(
+              `https://finnhub.io/api/v1/stock/option-chain?symbol=${ticker}&token=${finnhubKey}`
+            );
+            
+            if (optionRes.ok) {
+              const optionData = await optionRes.json();
+              
+              // Find the matching strike and expiry
+              if (optionData.data && Array.isArray(optionData.data)) {
+                for (const contract of optionData.data) {
+                  if (
+                    contract.strike === parseFloat(strikePrice) &&
+                    Math.abs(contract.expirationDate - expiryTime) < 86400 // Within 1 day
+                  ) {
+                    if (contract.call && contract.call.lastPrice) {
+                      data.optionPrice = contract.call.lastPrice.toFixed(2);
+                      data.dataSource = "finnhub";
+                      console.log(`[Finnhub] Got option price: $${data.optionPrice}`);
+                      return res.status(200).json(data);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (finnhubErr) {
+      console.log(`[Finnhub] Failed:`, finnhubErr.message);
+    }
+
+    // METHOD 2: Try Yahoo Finance for real closing price
+    console.log(`[Yahoo] Attempting to fetch stock price for ${ticker}...`);
     try {
       const yahooRes = await fetch(
         `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`,
@@ -54,7 +105,7 @@ export default async function handler(req, res) {
       console.log(`[Yahoo] Failed:`, yahooErr.message);
     }
 
-    // METHOD 2: Use Claude API for technical indicators and option pricing
+    // METHOD 3: Use Claude API for technical indicators
     console.log(`[Claude] Attempting to fetch technical data for ${ticker}...`);
     try {
       const client = new Anthropic({
@@ -81,8 +132,7 @@ Generate varied, realistic values (not always 50 for RSI):
   "stochasticK": ${25 + Math.floor(Math.random() * 60)},
   "stochasticD": ${25 + Math.floor(Math.random() * 60)},
   "bbPosition": "${['Near Upper Band', 'Middle', 'Near Lower Band'][Math.floor(Math.random() * 3)]}",
-  "ivPercentile": ${30 + Math.floor(Math.random() * 50)},
-  "optionPrice": ${strikePrice ? (parseFloat(strikePrice) * (0.06 + Math.random() * 0.1)).toFixed(2) : 54}
+  "ivPercentile": ${30 + Math.floor(Math.random() * 50)}
 }
 
 Return ONLY the JSON object.`,
@@ -101,12 +151,13 @@ Return ONLY the JSON object.`,
       data.stochasticD = claudeData.stochasticD || data.stochasticD;
       data.bbPosition = claudeData.bbPosition || data.bbPosition;
       data.ivPercentile = claudeData.ivPercentile || data.ivPercentile;
-      data.optionPrice = claudeData.optionPrice || data.optionPrice;
       
-      if (data.dataSource !== "yahoo") {
-        data.dataSource = "claude";
-      } else {
-        data.dataSource = "yahoo + claude";
+      if (!data.dataSource.includes("finnhub")) {
+        if (data.dataSource === "yahoo") {
+          data.dataSource = "yahoo + claude";
+        } else {
+          data.dataSource = "claude";
+        }
       }
       
       console.log(`[Claude] Success! Got RSI: ${data.rsi14}`);
@@ -115,9 +166,8 @@ Return ONLY the JSON object.`,
       console.log(`[Claude] Failed:`, claudeErr.message);
     }
 
-    // METHOD 3: Return fallback with note
-    console.log(`[Fallback] All methods exhausted, using defaults`);
-    data.dataSource = data.dataSource;
+    // METHOD 4: Return with available data
+    console.log(`[Fallback] Using available data, source: ${data.dataSource}`);
     return res.status(200).json(data);
 
   } catch (error) {
