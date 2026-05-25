@@ -229,50 +229,38 @@ export default function DayTradingApp() {
       // Fetch real economic calendar and earnings for the week
       let weeklyEvents = '';
       try {
-        // We'll generate a realistic weekly calendar based on current date
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - dayOfWeek);
-        
-        const weeklyEventsData = {
-          economicEvents: [],
-          earnings: [],
-        };
-        
-        // Common weekly economic events
+        // Common weekly economic events with links
         const economicCalendar = [
-          { name: 'Initial Jobless Claims', day: 'Thursday', time: '8:30 AM', importance: 'HIGH', impact: 'USD, Equities' },
-          { name: 'CPI Release', day: 'Wednesday', time: '8:30 AM', importance: 'CRITICAL', impact: 'All Markets' },
-          { name: 'PPI Release', day: 'Tuesday', time: '8:30 AM', importance: 'HIGH', impact: 'Inflation, Bonds' },
-          { name: 'Fed Speakers', day: 'Multiple', time: 'Various', importance: 'MEDIUM', impact: 'USD, Rates' },
-          { name: 'Retail Sales', day: 'Friday', time: '8:30 AM', importance: 'HIGH', impact: 'Consumer, Equities' },
-          { name: 'Producer Price Index', day: 'Thursday', time: '8:30 AM', importance: 'MEDIUM', impact: 'Inflation' },
+          { name: 'Initial Jobless Claims', day: 'Thursday', time: '8:30 AM', importance: 'HIGH', impact: 'USD, Equities', link: 'https://www.investing.com/economic-calendar/jobless-claims' },
+          { name: 'CPI Release', day: 'Wednesday', time: '8:30 AM', importance: 'CRITICAL', impact: 'All Markets', link: 'https://www.investing.com/economic-calendar/cpi' },
+          { name: 'PPI Release', day: 'Tuesday', time: '8:30 AM', importance: 'HIGH', impact: 'Inflation, Bonds', link: 'https://www.investing.com/economic-calendar/ppi' },
+          { name: 'Retail Sales', day: 'Friday', time: '8:30 AM', importance: 'HIGH', impact: 'Consumer, Equities', link: 'https://www.investing.com/economic-calendar/retail-sales' },
+          { name: 'Fed Speakers', day: 'Multiple', time: 'Various', importance: 'MEDIUM', impact: 'USD, Rates', link: 'https://www.federalreserve.gov/newsevents/calendar.htm' },
         ];
         
-        // Sample earnings this week (would be replaced with real API data)
+        // Sample earnings this week with links
         const earningsThisWeek = [
-          { ticker: 'NVDA', day: 'Thursday After Hours', eps: 'TBD', iv: 'Elevated' },
-          { ticker: 'MSFT', day: 'Wednesday After Hours', eps: 'TBD', iv: 'Elevated' },
-          { ticker: 'TSLA', day: 'Monday After Hours', eps: 'TBD', iv: 'Elevated' },
-          { ticker: 'META', day: 'Tuesday After Hours', eps: 'TBD', iv: 'Elevated' },
+          { ticker: 'NVDA', day: 'Thursday After Hours', link: 'https://finance.yahoo.com/quote/NVDA/news' },
+          { ticker: 'MSFT', day: 'Wednesday After Hours', link: 'https://finance.yahoo.com/quote/MSFT/news' },
+          { ticker: 'TSLA', day: 'Monday After Hours', link: 'https://finance.yahoo.com/quote/TSLA/news' },
+          { ticker: 'META', day: 'Tuesday After Hours', link: 'https://finance.yahoo.com/quote/META/news' },
         ];
         
-        // Format events
+        // Format events as clickable HTML
         let eventsList = '';
         economicCalendar.forEach(event => {
           const importance = event.importance === 'CRITICAL' ? '🔴' : event.importance === 'HIGH' ? '🟠' : '🟡';
-          eventsList += `${importance} <strong>${event.name}</strong> - ${event.day} ${event.time} | Impact: ${event.impact}\n`;
+          eventsList += `${importance} <a href="${event.link}" target="_blank" rel="noopener noreferrer"><strong>${event.name}</strong></a> - ${event.day} ${event.time} | ${event.impact}\n`;
         });
         
         let earningsList = '';
         earningsThisWeek.forEach(company => {
-          earningsList += `• <strong>${company.ticker}</strong> reports ${company.day} | IV: ${company.iv}\n`;
+          earningsList += `📊 <a href="${company.link}" target="_blank" rel="noopener noreferrer"><strong>${company.ticker}</strong></a> reports ${company.day}\n`;
         });
         
-        weeklyEvents = `**THIS WEEK'S CRITICAL EVENTS:**\n\n**ECONOMIC CALENDAR:**\n${eventsList}\n**COMPANY EARNINGS:**\n${earningsList}\n\n**TRADING STRATEGY:** Avoid holding through major economic data and earnings unless specifically betting on the move. IV crush post-event typically wipes out time value.`;
+        weeklyEvents = `📅 ECONOMIC CALENDAR:\n${eventsList}\n💼 COMPANY EARNINGS:\n${earningsList}\n⚠️ STRATEGY: Avoid holding through major economic data and earnings unless specifically betting on the move. IV crush post-event typically wipes out time value.`;
       } catch (err) {
-        weeklyEvents = 'Unable to fetch live economic calendar. Check Finviz.com and investing.com for this week\'s events.';
+        weeklyEvents = 'Unable to fetch live economic calendar. Check Investing.com and Yahoo Finance for this week\'s events.';
       }
       
       // Calculate scores - DEFINE BEFORE USING
@@ -573,9 +561,14 @@ export default function DayTradingApp() {
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>
                 📰 This Week's Critical Market Events
               </h3>
-              <div style={{ fontSize: '0.9rem', color: '#78350f', lineHeight: '1.8', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                {analysisResult.weeklyEvents}
-              </div>
+              <div 
+                style={{ fontSize: '0.9rem', color: '#78350f', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}
+                dangerouslySetInnerHTML={{ 
+                  __html: analysisResult.weeklyEvents
+                    .replace(/\n/g, '<br/>')
+                    .replace(/href="/g, 'href="')
+                }}
+              />
             </div>
 
             <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', overflow: 'auto' }}>
