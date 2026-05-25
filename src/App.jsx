@@ -109,6 +109,9 @@ export default function DayTradingApp() {
       } else {
         thesisAnalysis = '⚠️ No trade thesis provided. Consider explaining your reasoning before placing the trade.';
       }
+
+      // Generate AI Trade Thesis Statement
+      let thesisStatement = '';
       let thesisColor = '#374151';
       
       if (riskRewardRatio >= 2) {
