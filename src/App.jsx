@@ -249,6 +249,27 @@ export default function DayTradingApp() {
               </div>
             </div>
 
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginTop: '2rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>📚 Understanding Your Results</h3>
+              <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>RSI (14):</strong> Values above 70 indicate overbought conditions (potential pullback), below 30 indicate oversold (potential bounce). 30-70 is neutral.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>MACD Signal:</strong> Bullish Crossover = uptrend emerging, Bearish Crossover = downtrend emerging. Use with RSI for confirmation.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>Stochastic K:</strong> Above 80 = overbought, below 20 = oversold. Helps confirm RSI readings.
+                </p>
+                <p style={{ margin: '0 0 0.75rem 0' }}>
+                  <strong>Trade Quality Score:</strong> 75+ = Institutional Grade, 60-74 = Trade Worthy, below 60 = Caution. Based on liquidity, risk/reward, and technical alignment.
+                </p>
+                <p style={{ margin: 0 }}>
+                  <strong>⚠️ Always verify:</strong> Cross-check all data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.
+                </p>
+              </div>
+            </div>
+
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem' }}>📊 Trade Quality Score</h3>
             <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
               <div style={{ fontSize: '3rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#f59e0b' : '#dc2626', marginBottom: '0.5rem' }}>
@@ -277,30 +298,6 @@ export default function DayTradingApp() {
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>
                 ⚠️ This is educational analysis only. Not financial advice. Always verify data on your broker before trading.
               </p>
-            </div>
-
-            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginTop: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>📚 How to Use This Tool</h3>
-              <div style={{ fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
-                <p style={{ margin: '0 0 0.75rem 0' }}>
-                  <strong>1. Enter Your Data:</strong> Select a ticker, enter the strike price and option price from your broker (not estimated).
-                </p>
-                <p style={{ margin: '0 0 0.75rem 0' }}>
-                  <strong>2. Review Technical Indicators:</strong> Check RSI (Relative Strength Index), MACD, and Stochastic readings. RSI above 70 = Overbought, below 30 = Oversold.
-                </p>
-                <p style={{ margin: '0 0 0.75rem 0' }}>
-                  <strong>3. Check Trade Quality Score:</strong> A score above 75 is institutional-grade, 60-74 is tradeable, below 60 requires caution. Scores are based on Liquidity, Risk/Reward ratio, and Technical alignment.
-                </p>
-                <p style={{ margin: '0 0 0.75rem 0' }}>
-                  <strong>4. Verify on Finviz:</strong> Always cross-check technical indicators on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.
-                </p>
-                <p style={{ margin: '0 0 0.75rem 0' }}>
-                  <strong>5. Risk Management:</strong> Only trade with capital you can afford to lose. Use defined-risk strategies and set stop losses before entering any trade.
-                </p>
-                <p style={{ margin: 0 }}>
-                  <strong>⚠️ Remember:</strong> Past performance does not guarantee future results. AI-generated analysis may not be 100% accurate. This is education only, not a recommendation to buy or sell.
-                </p>
-              </div>
             </div>
           </div>
         )}
