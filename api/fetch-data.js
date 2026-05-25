@@ -30,6 +30,36 @@ export default async function handler(req, res) {
   };
 
   try {
+    // Try Finnhub first for real quote, then Polygon for technicals
+    const finnhubKey = process.env.FINNHUB_API_KEY;
+    console.log(`[Finnhub] API Key present: ${finnhubKey ? 'YES' : 'NO'}`);
+    
+    if (finnhubKey) {
+      console.log(`[Finnhub] Fetching quote for ${ticker}...`);
+      try {
+        const finnhubRes = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${finnhubKey}`
+        );
+        
+        console.log(`[Finnhub] Quote response status: ${finnhubRes.status}`);
+        
+        if (finnhubRes.ok) {
+          const finnhubData = await finnhubRes.json();
+          console.log(`[Finnhub] Quote data:`, JSON.stringify(finnhubData));
+          
+          if (finnhubData.c && finnhubData.c > 0) {
+            data.lastClose = parseFloat(finnhubData.c).toFixed(2);
+            data.currentPrice = parseFloat(finnhubData.c).toFixed(2);
+            console.log(`[Finnhub] ✅ Got REAL stock price: $${data.lastClose}`);
+          }
+        } else {
+          console.log(`[Finnhub] Quote failed (status ${finnhubRes.status})`);
+        }
+      } catch (err) {
+        console.log(`[Finnhub] Error:`, err.message);
+      }
+    }
+    
     // METHOD 1: Try Polygon.io for real technical data
     console.log(`[Polygon] Attempting to fetch technical data for ${ticker}...`);
     try {
@@ -37,34 +67,6 @@ export default async function handler(req, res) {
       console.log(`[Polygon] API Key present: ${polygonKey ? 'YES' : 'NO'}`);
       
       if (polygonKey) {
-        // Get latest quote using v3 endpoint (more reliable for current prices)
-        console.log(`[Polygon] Fetching latest quote for ${ticker}...`);
-        const quoteRes = await fetch(
-          `https://api.polygon.io/v3/quotes/${ticker}?apikey=${polygonKey}`
-        );
-        
-        console.log(`[Polygon] Quote response status: ${quoteRes.status}`);
-        
-        if (quoteRes.ok) {
-          const quoteData = await quoteRes.json();
-          console.log(`[Polygon] Quote response:`, JSON.stringify(quoteData.results));
-          
-          if (quoteData.results) {
-            // Extract the most accurate current price
-            const currentPrice = quoteData.results.last_price || 
-                               quoteData.results.last?.price ||
-                               quoteData.results.c;
-            
-            if (currentPrice && currentPrice > 0) {
-              data.lastClose = parseFloat(currentPrice).toFixed(2);
-              data.currentPrice = parseFloat(currentPrice).toFixed(2);
-              console.log(`[Polygon] ✅ Got REAL stock price: $${data.lastClose}`);
-            }
-          }
-        } else {
-          console.log(`[Polygon] Quote failed (status ${quoteRes.status}), will try RSI...`);
-        }
-        
         // Get DAILY RSI (not minute RSI)
         console.log(`[Polygon] Fetching DAILY RSI for ${ticker}...`);
         const rsiRes = await fetch(
