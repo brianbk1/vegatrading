@@ -117,8 +117,8 @@ export default function DayTradingApp() {
       ? Math.max(20, 100 - winProbability)
       : winProbability;
     
-    // Break-even levels
-    const optionPrice = (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
+    // Break-even levels - use real or fallback option price
+    const optionPrice = realData?.optionPrice ? parseFloat(realData.optionPrice) : (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
     const beCall = optionType === 'call' 
       ? (parseFloat(strike) + parseFloat(optionPrice)).toFixed(2)
       : (parseFloat(strike) - parseFloat(optionPrice)).toFixed(2);
