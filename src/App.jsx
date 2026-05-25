@@ -564,6 +564,8 @@ export default function DayTradingApp() {
                 📥 Export to JSON
               </button>
             </div>
+
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>
               Analysis Results
             </h2>
 
