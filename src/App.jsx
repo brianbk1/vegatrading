@@ -118,7 +118,8 @@ export default function DayTradingApp() {
       : winProbability;
     
     // Break-even levels - use real or fallback option price
-    const optionPrice = realData?.optionPrice ? parseFloat(realData.optionPrice) : (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
+    let optionPrice = realData?.optionPrice ? parseFloat(realData.optionPrice) : (strike * (Math.random() * 0.08 + 0.02));
+    optionPrice = parseFloat(optionPrice).toFixed(2);
     const beCall = optionType === 'call' 
       ? (parseFloat(strike) + parseFloat(optionPrice)).toFixed(2)
       : (parseFloat(strike) - parseFloat(optionPrice)).toFixed(2);
@@ -240,15 +241,20 @@ export default function DayTradingApp() {
         }),
       });
 
+      console.log('API Response status:', dataResponse.status);
       let realData = null;
       let apiRSI = null;
       if (dataResponse.ok) {
         realData = await dataResponse.json();
+        console.log('Real data from API:', realData);
         apiRSI = realData.rsi14; // Store the API RSI value
+      } else {
+        console.error('API error, status:', dataResponse.status);
       }
 
       // If API fails, fall back to simulated
       if (!realData) {
+        console.log('Using fallback data');
         realData = {
           lastClose: parseFloat(strikePrice) || 400,
           rsi14: parseInt(manualRSI) || 50,
@@ -268,17 +274,27 @@ export default function DayTradingApp() {
       // Use manual RSI override if provided, otherwise use API RSI
       const finalRSI = manualRSI && parseInt(manualRSI) > 0 ? parseInt(manualRSI) : (apiRSI || realData.rsi14);
       
+      // Ensure optionPrice is a number, not a string
+      if (realData.optionPrice) {
+        realData.optionPrice = parseFloat(realData.optionPrice);
+      }
+      
+      console.log('Calling generateInstitutionalAnalysis with RSI:', finalRSI);
       // Now get institutional analysis with real data
       const result = generateInstitutionalAnalysis(finalRSI, realData);
+      console.log('Generated analysis result:', result);
+      
       result.lastClose = realData.lastClose;
       result.optionPrice = realData.optionPrice;
       result.dataSource = realData.dataSource;
       result.claudeInsight = `Live ${ticker} data: RSI(14) = ${finalRSI} (${finalRSI > 70 ? 'Overbought' : finalRSI < 30 ? 'Oversold' : 'Neutral'}). Last close: $${realData.lastClose}. Stochastic K=${realData.stochasticK}, MACD ${realData.macdSignal}. BB position: ${realData.bbPosition}. IV at ${realData.ivPercentile}th percentile. ${realData.optionPrice ? `Option price: $${realData.optionPrice.toFixed(2)}` : ''} ⚠️ AI-generated data may not be 100% accurate. Always verify on Finviz.com or your broker.`;
       
-      console.log('Setting analysis result:', result);
+      console.log('Final result before setAnalysisResult:', result);
       setAnalysisResult(result);
+      console.log('Analysis result set');
     } catch (err) {
-      setError('Error fetching market data. Using fallback mode.');
+      console.error('Error in handleAnalyze:', err);
+      setError('Error fetching market data: ' + err.message);
       const result = generateInstitutionalAnalysis(parseInt(manualRSI) || 50);
       result.claudeInsight = `Fallback mode: Using manual RSI of ${manualRSI}. All other indicators estimated. Verify data on Finviz.com before trading.`;
       setAnalysisResult(result);
