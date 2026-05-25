@@ -71,43 +71,74 @@ export default function DayTradingApp() {
       const totalMaxRisk = contractsToTrade * maxRiskPerContract;
       const totalMaxGain = contractsToTrade * maxGainPerContract;
 
-      // Generate Trade Thesis Analysis from user input
+      // Generate Trade Thesis Analysis from user input - SPECIFIC to their catalyst
       let thesisAnalysis = '';
       if (userThesis && userThesis.trim().length > 0) {
-        // Analyze user's thesis for quality signals
+        // Analyze user's specific thesis and catalyst
         const thesisLower = userThesis.toLowerCase();
-        const hasStopLoss = thesisLower.includes('stop') || thesisLower.includes('loss');
-        const hasTakeProfit = thesisLower.includes('profit') || thesisLower.includes('target');
-        const hasTimeframe = thesisLower.includes('day') || thesisLower.includes('expir') || thesisLower.includes('week');
-        const hasTechnicals = thesisLower.includes('rsi') || thesisLower.includes('macd') || thesisLower.includes('support') || thesisLower.includes('resistance');
-        const hasRiskReward = thesisLower.includes('risk') || thesisLower.includes('reward') || thesisLower.includes('ratio');
-        const hasCatalyst = thesisLower.includes('earn') || thesisLower.includes('fed') || thesisLower.includes('cpi') || thesisLower.includes('event') || thesisLower.includes('catalyst');
+        
+        // Detect specific catalysts mentioned
+        let catalystFound = '';
+        if (thesisLower.includes('iran') || thesisLower.includes('war') || thesisLower.includes('geopolitical')) {
+          catalystFound = 'Geopolitical Risk (Iran/War)';
+        } else if (thesisLower.includes('earn')) {
+          catalystFound = 'Earnings Report';
+        } else if (thesisLower.includes('fed') || thesisLower.includes('fomc')) {
+          catalystFound = 'Federal Reserve Decision';
+        } else if (thesisLower.includes('cpi') || thesisLower.includes('inflation')) {
+          catalystFound = 'Inflation Data';
+        } else if (thesisLower.includes('dividend')) {
+          catalystFound = 'Dividend Announcement';
+        } else if (thesisLower.includes('acquisition') || thesisLower.includes('merger')) {
+          catalystFound = 'M&A Activity';
+        } else {
+          catalystFound = 'Custom Catalyst';
+        }
 
-        let positives = [];
-        let warnings = [];
+        // Build specific impact analysis
+        let impactAnalysis = `📍 **Catalyst Identified:** ${catalystFound}\n\n`;
+        
+        if (catalystFound === 'Geopolitical Risk (Iran/War)') {
+          impactAnalysis += `**Market Impact on ${ticker}:**\n`;
+          if (ticker === 'USO' || ticker.includes('OIL')) {
+            impactAnalysis += `✅ **Bullish for Oil:** De-escalation/peace could reduce geopolitical premium. If tensions ease, oil prices may fall as risk premium unwinds. Your PUT could profit.\n`;
+          } else if (ticker === 'DXY' || ticker.includes('USD')) {
+            impactAnalysis += `✅ **Bullish for USD:** Risk-off sentiment strengthens dollar as safe haven. Peace news would reduce flight-to-safety buying.\n`;
+          } else if (ticker === 'GLD' || ticker.includes('GOLD')) {
+            impactAnalysis += `✅ **Bearish for Gold:** Geopolitical peace reduces safe-haven demand. Gold typically falls on de-escalation.\n`;
+          } else if (ticker === 'QQQ' || ticker === 'SPY' || ticker.includes('TECH')) {
+            impactAnalysis += `✅ **Bullish for Equities:** Peace news = lower risk premium = equity rally. Growth stocks (QQQ/Tech) tend to outperform on risk-on sentiment.\n`;
+          } else {
+            impactAnalysis += `✅ **Mixed Impact:** Geopolitical peace typically causes risk-on sentiment. Check ${ticker}'s sector sensitivity—defensives may underperform, growth may outperform.\n`;
+          }
+          impactAnalysis += `\n⚠️ **Timing Risk:** If peace is priced in already, the move may have already happened. Verify the news is fresh and market hasn't yet reacted.\n`;
+        } else if (catalystFound === 'Earnings Report') {
+          impactAnalysis += `**Earnings Impact Analysis:**\n`;
+          impactAnalysis += `✅ IV will likely spike before earnings (higher premiums)\n`;
+          impactAnalysis += `✅ IV will crush after earnings regardless of beat/miss\n`;
+          impactAnalysis += `⚠️ Be aware of earnings date vs. your option expiration\n`;
+          impactAnalysis += `⚠️ Gap risk if ${ticker} moves 5%+ on earnings surprise\n`;
+        } else if (catalystFound === 'Federal Reserve Decision') {
+          impactAnalysis += `**Fed Decision Impact:**\n`;
+          impactAnalysis += `✅ Rate cuts = bullish for equities, especially tech (QQQ)\n`;
+          impactAnalysis += `✅ Rate hikes = bearish for growth, bullish for financials\n`;
+          impactAnalysis += `⚠️ Forward guidance matters as much as the decision itself\n`;
+        } else {
+          impactAnalysis += `**Your Thesis Analysis:**\n`;
+          impactAnalysis += `✅ You've identified a specific market catalyst\n`;
+          impactAnalysis += `✅ Consider the timing—when does the catalyst resolve?\n`;
+          impactAnalysis += `⚠️ Ensure your DTE (${daysNum} days) gives enough time for the move\n`;
+        }
 
-        if (hasStopLoss) positives.push('✅ You mention stop loss—good risk management');
-        else warnings.push('⚠️ No stop loss mentioned—define max loss before trading');
+        impactAnalysis += `\n**Risk Check:**\n`;
+        impactAnalysis += `• Stock Price: $${currentPriceNum.toFixed(2)} | Strike: $${strikeNum.toFixed(2)} | Breakeven: $${breakEvenPrice}\n`;
+        impactAnalysis += `• Required Move: ${priceMovePercent}% to breakeven\n`;
+        impactAnalysis += `• Risk/Reward: 1:${riskRewardRatio} (${riskRewardRatio >= 2 ? '✅ Good' : riskRewardRatio >= 1 ? '⚠️ Fair' : '❌ Poor'})\n`;
+        impactAnalysis += `• Time Decay: ${daysNum} days remaining—theta working against you daily`;
 
-        if (hasTakeProfit) positives.push('✅ You have a profit target—clear exit plan');
-        else warnings.push('⚠️ No take profit level—consider target price');
-
-        if (hasTimeframe) positives.push('✅ You reference timeframe—aligned with expiration');
-        else warnings.push('⚠️ No clear timeframe—ensure thesis aligns with DTE');
-
-        if (hasTechnicals) positives.push('✅ You cite technical levels—analytical approach');
-        else warnings.push('⚠️ No technical analysis mentioned—verify levels on Finviz');
-
-        if (hasRiskReward) positives.push('✅ You mention risk/reward—thinking like a pro');
-        else warnings.push('⚠️ No R:R discussed—current setup is 1:' + riskRewardRatio);
-
-        if (hasCatalyst) positives.push('✅ You reference catalysts—aware of event risk');
-        else warnings.push('⚠️ No catalysts mentioned—check earnings calendar');
-
-        thesisAnalysis = (positives.length > 0 ? positives.join(' ') + '\n\n' : '') +
-                        (warnings.length > 0 ? warnings.join('\n') : '✅ Strong thesis with clear risk management plan.');
+        thesisAnalysis = impactAnalysis;
       } else {
-        thesisAnalysis = '⚠️ No trade thesis provided. Consider explaining your reasoning before placing the trade.';
+        thesisAnalysis = '⚠️ No trade thesis provided. Consider explaining your reasoning and catalyst before placing the trade.';
       }
 
       // Generate AI Trade Thesis Statement
@@ -167,8 +198,32 @@ export default function DayTradingApp() {
         thesisStatement += `Overall: Poor risk/reward. Consider waiting for better setup or reducing position size.`;
       }
 
-      // Calculate scores
-      const liquidityScore = 85;
+      // IV Crush Impact Analysis
+      // When IV drops, option premium decreases even if price doesn't move
+      const ivDropScenarios = [
+        { ivChange: -20, label: 'Moderate IV Drop (-20%)' },
+        { ivChange: -40, label: 'Significant IV Drop (-40%)' },
+        { ivChange: -60, label: 'Severe IV Drop (-60%)' }
+      ];
+
+      const ivCrushImpact = ivDropScenarios.map(scenario => {
+        // Vega tells us how much option price changes per 1% IV change
+        const vegaNum = parseFloat(vega);
+        const totalVegaImpact = vegaNum * scenario.ivChange;
+        
+        // New option price after IV crush (price stays same, IV drops)
+        const priceAfterIVCrush = Math.max(0, optionPriceNum + totalVegaImpact);
+        const dollarLossFromIVCrush = optionPriceNum - priceAfterIVCrush;
+        const percentLossFromIVCrush = ((dollarLossFromIVCrush / optionPriceNum) * 100).toFixed(1);
+        
+        return {
+          scenario: scenario.label,
+          ivChange: scenario.ivChange,
+          newPrice: priceAfterIVCrush.toFixed(2),
+          dollarLoss: dollarLossFromIVCrush.toFixed(2),
+          percentLoss: percentLossFromIVCrush
+        };
+      });
       const riskRewardScore = riskRewardRatio >= 2 ? 85 : riskRewardRatio >= 1 ? 70 : 45;
       const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
@@ -209,6 +264,8 @@ export default function DayTradingApp() {
         thesisStatement,
         userThesis,
         thesisAnalysis,
+        // IV Crush
+        ivCrushImpact,
       });
     } catch (err) {
       console.error('Error:', err);
@@ -447,9 +504,9 @@ export default function DayTradingApp() {
 
                 <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', marginTop: '1rem' }}>
                   <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1f2937' }}>
-                    💬 Analysis of Your Thesis
+                    💬 Catalyst Impact Analysis
                   </h4>
-                  <div style={{ fontSize: '0.9rem', color: '#374151', lineHeight: '1.8', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '0.9rem', color: '#374151', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>
                     {analysisResult.thesisAnalysis}
                   </div>
                 </div>
@@ -582,6 +639,49 @@ export default function DayTradingApp() {
                   <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.totalMaxRisk}</div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Max loss if wrong</div>
                 </div>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', marginTop: '2rem' }}>⚡ IV Crush Impact</h3>
+            <div style={{ background: '#fff5f5', border: '2px solid #fca5a5', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', color: '#7c2d12', fontWeight: 600 }}>
+                ⚠️ IV Crush Risk: If implied volatility drops after you enter, your option loses value even if the stock price doesn't move.
+              </p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                {analysisResult.ivCrushImpact.map((scenario, idx) => (
+                  <div key={idx} style={{ background: 'white', padding: '1rem', borderRadius: '6px', border: '1px solid #fca5a5' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#9a3412', fontWeight: 700, marginBottom: '0.5rem' }}>
+                      {scenario.scenario}
+                    </div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#dc2626', marginBottom: '0.25rem' }}>
+                      ${scenario.newPrice}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#7c2d12', marginBottom: '0.5rem' }}>
+                      New price after IV change
+                    </div>
+                    <div style={{ borderTop: '1px solid #fecaca', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#9a3412', fontWeight: 600 }}>
+                        Loss: ${scenario.dollarLoss} ({scenario.percentLoss}%)
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '6px', marginTop: '1rem', borderLeft: '4px solid #dc2626' }}>
+                <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#7c2d12', fontWeight: 600 }}>
+                  💡 When IV Crushes Happen:
+                </p>
+                <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.5rem', fontSize: '0.85rem', color: '#7c2d12', lineHeight: '1.6' }}>
+                  <li>After earnings announcements</li>
+                  <li>After Fed decisions or economic data</li>
+                  <li>When volatility expectations drop</li>
+                  <li>Post-event risk resolution</li>
+                </ul>
+                <p style={{ margin: '0.75rem 0 0 0', fontSize: '0.85rem', color: '#7c2d12' }}>
+                  <strong>Strategy:</strong> If betting on IV crush, sell options. If buying options before events, expect IV crush afterward.
+                </p>
               </div>
             </div>
 
