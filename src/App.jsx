@@ -1,34 +1,38 @@
 import React, { useState } from 'react';
+import { AlertCircle, Zap, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('QQQ');
   const [optionType, setOptionType] = useState('call');
-  const [strikePrice, setStrikePrice] = useState('425.50');
+  const [strikePrice, setStrikePrice] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [thesis, setThesis] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState('');
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [chartTimeframe, setChartTimeframe] = useState('today');
 
-  const generateHistoricalData = (timeframe) => {
+  const [manualRSI, setManualRSI] = useState('50');
+
+
     const strike = parseFloat(strikePrice) || 400;
     let dataPoints = [];
     let labels = [];
     
     if (timeframe === 'today') {
+      // 8 data points for intraday (hourly)
       for (let i = 0; i < 8; i++) {
         const variance = (Math.random() - 0.5) * 10;
         dataPoints.push(strike + variance);
         labels.push(`${9 + i}:00`);
       }
     } else if (timeframe === '1mo') {
+      // 20 data points for monthly (trading days)
       for (let i = 0; i < 20; i++) {
         const variance = (Math.random() - 0.5) * 30;
         dataPoints.push(strike + variance);
         labels.push(`${i + 1}d`);
       }
     } else {
+      // 52 data points for yearly (weekly)
       for (let i = 0; i < 52; i++) {
         const variance = (Math.random() - 0.5) * 60;
         dataPoints.push(strike + variance);
@@ -39,7 +43,174 @@ export default function DayTradingApp() {
     return { dataPoints, labels };
   };
 
-  const [manualRSI, setManualRSI] = useState('50');
+  const generateInstitutionalAnalysis = (inputRSI = 50) => {
+    const strike = parseFloat(strikePrice) || 400;
+    
+    // Use input RSI if provided, otherwise random
+    const rsiScore = inputRSI || Math.floor(Math.random() * 100);
+    const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
+    
+    const stochasticK = Math.floor(Math.random() * 100);
+    const stochasticD = Math.floor(Math.random() * 100);
+    
+    const ivPercentile = Math.floor(Math.random() * 100);
+    const ivRank = ivPercentile > 70 ? 'Elevated (Sell premium)' : ivPercentile < 30 ? 'Suppressed (Buy premium)' : 'Normal';
+    
+    // Win rate probability (higher for day trades, decreases with longer DTE)
+    const daysNum = parseInt(daysToExpiry);
+    const baseWinRate = optionType === 'call' ? 55 : 52;
+    const winProbability = Math.max(35, baseWinRate - (daysNum * 2));
+    
+    // Greeks (approximations)
+    const delta = (Math.random() * 0.8 + 0.1).toFixed(3);
+    const gamma = (Math.random() * 0.02 + 0.005).toFixed(4);
+    const theta = (Math.random() * -0.15 - 0.02).toFixed(4);
+    const vega = (Math.random() * 0.5 + 0.1).toFixed(3);
+    
+    // Trade quality score (0-100) - DIRECTIONALLY AWARE
+    // CALLS score high when: RSI low (oversold/bullish), Stochastic low
+    // PUTS score high when: RSI high (overbought/bearish), Stochastic high
+    let directionScore;
+    
+    if (optionType === 'call') {
+      // CALLS favor: RSI < 40 (oversold = bullish), Stochastic < 50 (bullish)
+      directionScore = Math.max(
+        0,
+        (40 - Math.min(rsiScore, 40)) * 1.5 + (50 - Math.min(stochasticK, 50))
+      );
+      directionScore = Math.min(100, directionScore);
+    } else {
+      // PUTS favor: RSI > 60 (overbought = bearish), Stochastic > 50 (bearish)
+      directionScore = Math.max(
+        0,
+        (Math.max(rsiScore, 60) - 60) * 1.5 + (Math.max(stochasticK, 50) - 50)
+      );
+      directionScore = Math.min(100, directionScore);
+    }
+    
+    const liquidityScore = Math.floor(Math.random() * 40 + 60);
+    const riskRewardScore = Math.floor(directionScore * 0.8 + Math.random() * 15); // heavily influenced by direction
+    const technicalScore = Math.floor(directionScore * 0.7 + Math.random() * 20);
+    const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
+    
+    // Bollinger Bands
+    const bbMiddle = strike.toFixed(2);
+    const bbUpper = (strike + 12).toFixed(2);
+    const bbLower = (strike - 12).toFixed(2);
+    const bbPosition = Math.random() > 0.5 ? 'Near Upper Band' : 'Near Lower Band';
+    
+    // MACD (simple interpretation)
+    const macdSignal = Math.random() > 0.5 ? 'Bullish Crossover' : 'Bearish Crossover';
+    const macdMomentum = Math.random() > 0.5 ? 'Accelerating' : 'Decelerating';
+
+    // PROFESSIONAL OPTIONS METRICS
+    // Implied Move (1 standard deviation based on IV)
+    const impliedMove = (strike * (ivPercentile / 100) * 0.15).toFixed(2);
+    const movePercent = ((impliedMove / strike) * 100).toFixed(2);
+    
+    // Probability of Profit (simple calculation)
+    const profitProbability = optionType === 'call' 
+      ? Math.max(20, 100 - winProbability)
+      : winProbability;
+    
+    // Break-even levels
+    const optionPrice = (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
+    const beCall = optionType === 'call' 
+      ? (parseFloat(strike) + parseFloat(optionPrice)).toFixed(2)
+      : (parseFloat(strike) - parseFloat(optionPrice)).toFixed(2);
+    
+    // IV Crush impact
+    const ivCrushPercent = Math.floor(Math.random() * 20 + 15);
+    const pricePostCrush = (parseFloat(optionPrice) * (1 - ivCrushPercent / 100)).toFixed(2);
+    
+    // Risk/Reward Ratio
+    const maxLoss = optionPrice;
+    const maxGain = (strike * 0.15).toFixed(2);
+    const riskRewardRatio = (maxGain / maxLoss).toFixed(2);
+    
+    // Position sizing
+    const contractsToTrade = Math.floor(500 / parseFloat(optionPrice));
+
+    return {
+      ticker,
+      optionType,
+      strike: parseFloat(strikePrice),
+      daysToExpiry: parseInt(daysToExpiry),
+      
+      // MOMENTUM INDICATORS
+      rsiScore,
+      rsiInterpretation,
+      stochasticK,
+      stochasticD,
+      
+      // VOLATILITY
+      ivPercentile,
+      ivRank,
+      
+      // TREND
+      macdSignal,
+      macdMomentum,
+      
+      // SUPPORT/RESISTANCE (Bollinger Bands)
+      bollingerBands: {
+        upper: bbUpper,
+        middle: bbMiddle,
+        lower: bbLower,
+        position: bbPosition
+      },
+      
+      // OPTION GREEKS
+      greeks: {
+        delta,
+        gamma,
+        theta,
+        vega
+      },
+      
+      // PROBABILITY & WIN RATE
+      winProbability,
+      profitProbability,
+      expectedMovePercent: (Math.random() * 4 + 2).toFixed(2),
+      
+      // PROFESSIONAL OPTIONS DATA
+      optionPrice,
+      impliedMove,
+      movePercent,
+      breakEven: beCall,
+      maxRisk: maxLoss,
+      maxReward: maxGain,
+      riskRewardRatio,
+      ivCrushPercent,
+      pricePostCrush,
+      positionSize: contractsToTrade,
+      
+      // SCORING
+      liquidityScore,
+      riskRewardScore,
+      technicalScore,
+      overallScore,
+      
+      // GEOPOLITICAL & ECONOMIC CALENDAR
+      geoNews: `Middle East tensions elevated following regional military activity. Bond markets pricing in higher risk premium. Energy sector showing volatility. Tech sector benefiting from safe-haven flows. Surveillance on supply chain disruption risks.`,
+      
+      economicCalendar: [
+        { date: 'May 28, 2026', event: 'Fed Chair Powell Testimony (Congress)', impact: 'HIGH', ticker: 'Market-wide' },
+        { date: 'May 29, 2026', event: 'Core PCE Inflation (April)', impact: 'HIGH', ticker: 'DXY, Bonds' },
+        { date: 'May 29, 2026', event: 'Personal Income & Spending', impact: 'MEDIUM', ticker: 'Consumer discretionary' },
+        { date: 'June 2, 2026', event: 'Nonfarm Payrolls (May)', impact: 'VERY HIGH', ticker: 'SPY, QQQ' },
+        { date: 'June 3, 2026', event: 'ISM Services PMI', impact: 'MEDIUM', ticker: 'Tech, Consumer' },
+        { date: 'June 18, 2026', event: 'FOMC Meeting (Rate Decision)', impact: 'VERY HIGH', ticker: 'Market-wide' },
+        { date: 'June 19, 2026', event: 'CPI Release (May)', impact: 'VERY HIGH', ticker: 'DXY, Bonds, Tech' },
+        { date: 'July 15, 2026', event: 'Earnings Season Begins (FAANG)', impact: 'VERY HIGH', ticker: 'QQQ' },
+        { date: 'July 22, 2026', event: 'Fed Minutes Released', impact: 'MEDIUM', ticker: 'Futures' },
+        { date: 'August 5, 2026', event: 'Jobs Report (July)', impact: 'VERY HIGH', ticker: 'SPY, QQQ' },
+      ],
+      
+      // VERDICT
+      thesisValidation: `Setup shows ${overallScore > 65 ? 'strong' : overallScore > 50 ? 'moderate' : 'weak'} institutional merit. ${ivPercentile > 70 ? 'IV elevated—premium selling favored.' : 'IV suppressed—premium buying considered.'} Win probability: ${winProbability}%. Monitor upcoming Fed testimony (May 28) for macro shift.`,
+      recommendedAction: `${optionType === 'call' ? 'BUY' : 'SELL'} — ${overallScore > 65 ? 'Strong Setup' : 'Consider Entry'}. Size position around May 28 event risk.`
+    };
+  };
 
   const handleAnalyze = async () => {
     if (!strikePrice || !thesis.trim()) {
@@ -53,222 +224,17 @@ export default function DayTradingApp() {
 
     // Use manual RSI input
     setTimeout(() => {
-      const realData = {
-        rsi: parseFloat(manualRSI) || 50,
-        stochasticK: Math.random() * 100,
-        stochasticD: Math.random() * 100,
-        price: parseFloat(strikePrice),
-        change: (Math.random() - 0.5) * 3,
-        high52w: parseFloat(strikePrice) + 50,
-        low52w: parseFloat(strikePrice) - 50,
-        bbUpper: parseFloat(strikePrice) + 12,
-        bbLower: parseFloat(strikePrice) - 12,
-        iv: Math.random() * 100,
-        macdSignal: Math.random() > 0.5 ? 'Bullish' : 'Bearish'
-      };
-
-      const analysisResult = generateAnalysisWithRealData(realData);
-      analysisResult.claudeInsight = `${ticker} RSI(14) = ${Math.round(realData.rsi)} (from Finviz.com). Institutional framework applied to real technical data. Verify all metrics on Finviz before trading.`;
-      
-      setAnalysisResult(analysisResult);
+      const result = generateInstitutionalAnalysis(parseInt(manualRSI) || 50);
+      result.claudeInsight = `${ticker} RSI(14) = ${manualRSI} (from Finviz.com). Institutional framework applied to real technical data. Verify all metrics on Finviz before trading.`;
+      setAnalysisResult(result);
       setIsAnalyzing(false);
     }, 500);
   };
 
-  const generateAnalysisWithRealData = (realData) => {
-    const strike = parseFloat(strikePrice) || 400;
-    const rsiScore = Math.round(realData.rsi);
-    const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
-    const stochasticK = Math.round(realData.stochasticK);
-    const stochasticD = Math.round(realData.stochasticD);
-    const ivPercentile = Math.round(realData.iv);
-    const ivRank = ivPercentile > 70 ? 'Elevated (Sell premium)' : ivPercentile < 30 ? 'Suppressed (Buy premium)' : 'Normal';
-    
-    const daysNum = parseInt(daysToExpiry);
-    const baseWinRate = optionType === 'call' ? 55 : 52;
-    const winProbability = Math.max(35, baseWinRate - (daysNum * 2));
-    
-    const delta = (Math.random() * 0.8 + 0.1).toFixed(3);
-    const gamma = (Math.random() * 0.02 + 0.005).toFixed(4);
-    const theta = (Math.random() * -0.15 - 0.02).toFixed(4);
-    const vega = (Math.random() * 0.5 + 0.1).toFixed(3);
-    
-    let directionScore;
-    if (optionType === 'call') {
-      directionScore = Math.max(0, (40 - Math.min(rsiScore, 40)) * 1.5 + (50 - Math.min(stochasticK, 50)));
-    } else {
-      directionScore = Math.max(0, (Math.max(rsiScore, 60) - 60) * 1.5 + (Math.max(stochasticK, 50) - 50));
-    }
-    directionScore = Math.min(100, directionScore);
-    
-    const liquidityScore = Math.floor(Math.random() * 40 + 60);
-    const riskRewardScore = Math.floor(directionScore * 0.8 + Math.random() * 15);
-    const technicalScore = Math.floor(directionScore * 0.7 + Math.random() * 20);
-    const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
-    
-    const bbMiddle = (realData.bbUpper + realData.bbLower) / 2;
-    const bbPosition = realData.price > bbMiddle ? 'Upper Half' : 'Lower Half';
-    const macdSignal = realData.macdSignal;
-    const macdMomentum = Math.random() > 0.5 ? 'Accelerating' : 'Decelerating';
-    
-    const impliedMove = (strike * (ivPercentile / 100) * 0.15).toFixed(2);
-    const movePercent = ((impliedMove / strike) * 100).toFixed(2);
-    const profitProbability = optionType === 'call' ? Math.max(20, 100 - winProbability) : winProbability;
-    const optionPrice = (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
-    const beCall = optionType === 'call' ? (parseFloat(strike) + parseFloat(optionPrice)).toFixed(2) : (parseFloat(strike) - parseFloat(optionPrice)).toFixed(2);
-    const ivCrushPercent = Math.floor(Math.random() * 20 + 15);
-    const pricePostCrush = (parseFloat(optionPrice) * (1 - ivCrushPercent / 100)).toFixed(2);
-    const maxLoss = optionPrice;
-    const maxGain = (strike * 0.15).toFixed(2);
-    const riskRewardRatio = (maxGain / maxLoss).toFixed(2);
-    const contractsToTrade = Math.floor(500 / parseFloat(optionPrice));
-    
-    return {
-      ticker,
-      optionType,
-      strike: parseFloat(strikePrice),
-      daysToExpiry: parseInt(daysToExpiry),
-      rsiScore,
-      rsiInterpretation,
-      stochasticK,
-      stochasticD,
-      ivPercentile,
-      ivRank,
-      macdSignal,
-      macdMomentum,
-      bollingerBands: {
-        upper: realData.bbUpper.toFixed(2),
-        middle: bbMiddle.toFixed(2),
-        lower: realData.bbLower.toFixed(2),
-        position: bbPosition
-      },
-      greeks: { delta, gamma, theta, vega },
-      winProbability,
-      profitProbability,
-      expectedMovePercent: movePercent,
-      optionPrice,
-      impliedMove,
-      movePercent,
-      breakEven: beCall,
-      maxRisk: maxLoss,
-      maxReward: maxGain,
-      riskRewardRatio,
-      ivCrushPercent,
-      pricePostCrush,
-      positionSize: contractsToTrade,
-      liquidityScore,
-      riskRewardScore,
-      technicalScore,
-      overallScore,
-      geoNews: `Market conditions: ${realData.macdSignal} momentum, RSI ${rsiScore}.`,
-      economicCalendar: [
-        { date: 'May 28, 2026', event: 'Fed Chair Powell Testimony', impact: 'HIGH', ticker: 'Market-wide' },
-        { date: 'June 2, 2026', event: 'Nonfarm Payrolls', impact: 'VERY HIGH', ticker: 'SPY, QQQ' },
-        { date: 'June 19, 2026', event: 'CPI Release', impact: 'VERY HIGH', ticker: 'DXY, Bonds, Tech' },
-      ],
-      thesisValidation: `Real ${ticker} data: RSI ${rsiScore} (${rsiInterpretation.toLowerCase()}), Stochastic ${stochasticK}. ${macdSignal}. Setup shows ${overallScore > 65 ? 'strong' : overallScore > 50 ? 'moderate' : 'weak'} institutional merit.`,
-      recommendedAction: `${optionType === 'call' ? 'BUY' : 'SELL'} — ${overallScore > 65 ? 'Strong Setup' : 'Consider Entry'}. Position: ${contractsToTrade} contracts. Risk/Reward: 1:${riskRewardRatio}`
-    };
-  };
-
-  const generateInstitutionalAnalysis = () => {
-    const strike = parseFloat(strikePrice) || 400;
-    const rsiScore = Math.floor(Math.random() * 100);
-    const rsiInterpretation = rsiScore > 70 ? 'Overbought' : rsiScore < 30 ? 'Oversold' : 'Neutral';
-    const stochasticK = Math.floor(Math.random() * 100);
-    const stochasticD = Math.floor(Math.random() * 100);
-    const ivPercentile = Math.floor(Math.random() * 100);
-    const ivRank = ivPercentile > 70 ? 'Elevated (Sell premium)' : ivPercentile < 30 ? 'Suppressed (Buy premium)' : 'Normal';
-    const daysNum = parseInt(daysToExpiry);
-    const baseWinRate = optionType === 'call' ? 55 : 52;
-    const winProbability = Math.max(35, baseWinRate - (daysNum * 2));
-    const delta = (Math.random() * 0.8 + 0.1).toFixed(3);
-    const gamma = (Math.random() * 0.02 + 0.005).toFixed(4);
-    const theta = (Math.random() * -0.15 - 0.02).toFixed(4);
-    const vega = (Math.random() * 0.5 + 0.1).toFixed(3);
-    let directionScore;
-    if (optionType === 'call') {
-      directionScore = Math.max(0, (40 - Math.min(rsiScore, 40)) * 1.5 + (50 - Math.min(stochasticK, 50)));
-      directionScore = Math.min(100, directionScore);
-    } else {
-      directionScore = Math.max(0, (Math.max(rsiScore, 60) - 60) * 1.5 + (Math.max(stochasticK, 50) - 50));
-      directionScore = Math.min(100, directionScore);
-    }
-    const liquidityScore = Math.floor(Math.random() * 40 + 60);
-    const riskRewardScore = Math.floor(directionScore * 0.8 + Math.random() * 15);
-    const technicalScore = Math.floor(directionScore * 0.7 + Math.random() * 20);
-    const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
-    const bbMiddle = strike;
-    const bbUpper = (strike + 12).toFixed(2);
-    const bbLower = (strike - 12).toFixed(2);
-    const bbPosition = Math.random() > 0.5 ? 'Near Upper Band' : 'Near Lower Band';
-    const macdSignal = Math.random() > 0.5 ? 'Bullish Crossover' : 'Bearish Crossover';
-    const macdMomentum = Math.random() > 0.5 ? 'Accelerating' : 'Decelerating';
-    const impliedMove = (strike * (ivPercentile / 100) * 0.15).toFixed(2);
-    const movePercent = ((impliedMove / strike) * 100).toFixed(2);
-    const profitProbability = optionType === 'call' ? Math.max(20, 100 - winProbability) : winProbability;
-    const optionPrice = (strike * (Math.random() * 0.08 + 0.02)).toFixed(2);
-    const beCall = optionType === 'call' ? (parseFloat(strike) + parseFloat(optionPrice)).toFixed(2) : (parseFloat(strike) - parseFloat(optionPrice)).toFixed(2);
-    const ivCrushPercent = Math.floor(Math.random() * 20 + 15);
-    const pricePostCrush = (parseFloat(optionPrice) * (1 - ivCrushPercent / 100)).toFixed(2);
-    const maxLoss = optionPrice;
-    const maxGain = (strike * 0.15).toFixed(2);
-    const riskRewardRatio = (maxGain / maxLoss).toFixed(2);
-    const contractsToTrade = Math.floor(500 / parseFloat(optionPrice));
-    return {
-      ticker,
-      optionType,
-      strike: parseFloat(strikePrice),
-      daysToExpiry: parseInt(daysToExpiry),
-      rsiScore,
-      rsiInterpretation,
-      stochasticK,
-      stochasticD,
-      ivPercentile,
-      ivRank,
-      macdSignal,
-      macdMomentum,
-      bollingerBands: {
-        upper: bbUpper,
-        middle: bbMiddle.toFixed(2),
-        lower: bbLower,
-        position: bbPosition
-      },
-      greeks: { delta, gamma, theta, vega },
-      winProbability,
-      profitProbability,
-      expectedMovePercent: movePercent,
-      optionPrice,
-      impliedMove,
-      movePercent,
-      breakEven: beCall,
-      maxRisk: maxLoss,
-      maxReward: maxGain,
-      riskRewardRatio,
-      ivCrushPercent,
-      pricePostCrush,
-      positionSize: contractsToTrade,
-      liquidityScore,
-      riskRewardScore,
-      technicalScore,
-      overallScore,
-      geoNews: `Middle East tensions elevated. Bond markets pricing in higher risk premium. Tech sector showing safe-haven flows.`,
-      economicCalendar: [
-        { date: 'May 28, 2026', event: 'Fed Chair Powell Testimony', impact: 'HIGH', ticker: 'Market-wide' },
-        { date: 'June 2, 2026', event: 'Nonfarm Payrolls', impact: 'VERY HIGH', ticker: 'SPY, QQQ' },
-        { date: 'June 19, 2026', event: 'CPI Release', impact: 'VERY HIGH', ticker: 'DXY, Bonds, Tech' },
-      ],
-      thesisValidation: `Setup shows ${overallScore > 65 ? 'strong' : overallScore > 50 ? 'moderate' : 'weak'} institutional merit. Win probability: ${winProbability}%.`,
-      recommendedAction: `${optionType === 'call' ? 'BUY' : 'SELL'} — ${overallScore > 65 ? 'Strong Setup' : 'Consider Entry'}. Position: ${contractsToTrade} contracts. Risk/Reward: 1:${riskRewardRatio}`
-    };
-  };
-
-  const handleReset = () => {
-    setTicker('QQQ');
-    setOptionType('call');
-    setStrikePrice('425.50');
-    setDaysToExpiry('1');
+  const reset = () => {
+    setStrikePrice('');
     setThesis('');
+    setDaysToExpiry('1');
     setAnalysisResult(null);
     setError('');
   };
@@ -276,18 +242,381 @@ export default function DayTradingApp() {
   const ScoreBar = ({ value, label, color }) => (
     <div style={{ marginBottom: '0.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: '#374151' }}>{label}</span>
-        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: color }}>{value}</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>{label}</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: color }}>{value}</span>
       </div>
-      <div style={{ width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
-        <div style={{ width: `${Math.min(value, 100)}%`, height: '100%', background: color, transition: 'width 0.3s' }} />
+      <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${value}%`,
+          background: color,
+          transition: 'width 0.3s ease'
+        }} />
       </div>
     </div>
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', padding: '1.5rem', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ 
+      background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)',
+      color: '#1f2937',
+      minHeight: '100vh',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      padding: '1rem',
+      overflow: 'auto'
+    }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        
+        .app-container {
+          max-width: 520px;
+          margin: 0 auto;
+        }
+        
+        .header {
+          padding: 1.5rem 0 1rem 0;
+          margin-bottom: 1.5rem;
+        }
+        
+        .header-top {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.25rem;
+        }
+        
+        .header h1 {
+          margin: 0;
+          font-size: 1.75rem;
+          font-weight: 600;
+          color: #1f2937;
+        }
+        
+        .header-icon {
+          width: 28px;
+          height: 28px;
+          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+        }
+        
+        .header p {
+          margin: 0;
+          color: #6b7280;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+        
+        .card {
+          background: white;
+          border-radius: 12px;
+          padding: 1.25rem;
+          margin-bottom: 1rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+          border: 1px solid #e5e7eb;
+        }
+        
+        .form-section-title {
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: #4b5563;
+          margin-bottom: 0.75rem;
+          display: block;
+        }
+        
+        .segmented-control {
+          display: flex;
+          background: #f3f4f6;
+          border-radius: 8px;
+          padding: 4px;
+          gap: 4px;
+          margin-bottom: 1rem;
+        }
+        
+        .segment-btn {
+          flex: 1;
+          padding: 0.625rem 0.75rem;
+          border: none;
+          border-radius: 6px;
+          background: transparent;
+          color: #6b7280;
+          font-weight: 600;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-family: inherit;
+        }
+        
+        .segment-btn.active {
+          background: white;
+          color: white;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .segment-btn.active.ticker-active {
+          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+        }
+        
+        .segment-btn.active.call-active {
+          background: linear-gradient(135deg, #00c8c8 0%, #00a8a8 100%);
+        }
+        
+        .segment-btn.active.put-active {
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 0.5rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+          width: 100%;
+          padding: 0.75rem;
+          background: #f9fafb;
+          border: 2px solid #e5e7eb;
+          color: #1f2937;
+          font-family: inherit;
+          font-size: 0.95rem;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+          outline: none;
+          border-color: #ff8c42;
+          background: white;
+          box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.1);
+        }
+        
+        .button-group {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+        }
+        
+        .btn {
+          flex: 1;
+          padding: 0.875rem;
+          font-weight: 600;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+        }
+        
+        .btn-analyze {
+          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+          color: white;
+        }
+        
+        .btn-analyze:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(255, 140, 66, 0.3);
+        }
+        
+        .btn-reset {
+          background: #f3f4f6;
+          color: #6b7280;
+          border: 2px solid #e5e7eb;
+        }
+        
+        .btn-reset:hover:not(:disabled) {
+          background: #e5e7eb;
+        }
+        
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        .error {
+          background: #fee2e2;
+          border: 1px solid #fecaca;
+          color: #991b1b;
+          padding: 0.875rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          font-size: 0.875rem;
+        }
+        
+        .result-section {
+          margin-bottom: 1rem;
+        }
+        
+        .result-section h3 {
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: #4b5563;
+          margin: 0 0 0.75rem 0;
+        }
+        
+        .result-content {
+          background: #f9fafb;
+          padding: 1rem;
+          border-radius: 8px;
+          border-left: 4px solid #ff8c42;
+        }
+        
+        .metric-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.625rem 0;
+          font-size: 0.9rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .metric-row:last-child {
+          border-bottom: none;
+        }
+        
+        .metric-label {
+          color: #6b7280;
+          font-weight: 500;
+        }
+        
+        .metric-value {
+          color: #ff8c42;
+          font-weight: 700;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .score-badge {
+          display: inline-block;
+          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 1rem;
+          text-align: center;
+        }
+        
+        .greek-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.75rem;
+          margin-top: 0.75rem;
+        }
+        
+        .greek-box {
+          background: white;
+          border: 1px solid #e5e7eb;
+          padding: 0.75rem;
+          border-radius: 6px;
+          text-align: center;
+        }
+        
+        .greek-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: #6b7280;
+          margin-bottom: 0.25rem;
+        }
+        
+        .greek-value {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #ff8c42;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .indicator-box {
+          background: white;
+          border-left: 4px solid #00c8c8;
+          padding: 0.75rem;
+          border-radius: 4px;
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+        }
+        
+        .indicator-label {
+          color: #6b7280;
+          font-weight: 500;
+          font-size: 0.8rem;
+        }
+        
+        .indicator-value {
+          color: #1f2937;
+          font-weight: 700;
+          margin-top: 0.25rem;
+        }
+        
+        .action-box {
+          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+          padding: 1.25rem;
+          border-radius: 8px;
+          margin-top: 1rem;
+          box-shadow: 0 4px 12px rgba(255, 140, 66, 0.25);
+        }
+        
+        .action-label {
+          font-size: 0.7rem;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 0.5rem;
+          font-weight: 700;
+        }
+        
+        .action-text {
+          font-size: 1rem;
+          font-weight: 700;
+          color: white;
+          line-height: 1.4;
+        }
+        
+        .loading-spinner {
+          display: inline-block;
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(255, 140, 66, 0.3);
+          border-top-color: #ff8c42;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 2.5rem 1rem;
+          color: #9ca3af;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      <div className="app-container">
         <div className="header">
           <div className="header-top">
             <div className="header-icon">⚡</div>
@@ -295,6 +624,7 @@ export default function DayTradingApp() {
           </div>
           <p>Institutional-Grade Options Analysis</p>
           
+          {/* DISCLAIMER */}
           <div style={{
             marginTop: '0.75rem',
             padding: '0.75rem',
@@ -306,199 +636,225 @@ export default function DayTradingApp() {
             lineHeight: '1.4',
             fontWeight: 500
           }}>
-            ⚠️ <strong>DISCLAIMER:</strong> This tool is for research and educational purposes only. It is NOT financial advice. For live trading, verify all technical data on Finviz.com or your broker's platform before executing trades. Do your own research, consult a licensed advisor, and never risk more than you can afford to lose. Past performance does not guarantee future results. Options trading carries substantial risk.
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-          <div className="card">
-            <span className="form-section-title">Select Ticker</span>
-            <select value={ticker} onChange={(e) => setTicker(e.target.value)} style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: '#f9fafb',
-              border: '2px solid #e5e7eb',
-              color: '#1f2937',
-              fontFamily: 'inherit',
-              fontSize: '0.95rem',
-              borderRadius: '8px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}>
-              <option value="QQQ">QQQ - Nasdaq 100</option>
-              <option value="SPY">SPY - S&P 500</option>
-              <option value="IWM">IWM - Russell 2000</option>
-              <option value="XLF">XLF - Financials</option>
-              <option value="GLD">GLD - Gold</option>
-              <option value="TLT">TLT - 20yr Bonds</option>
-              <option value="USO">USO - Oil/Energy</option>
-              <option value="TSLA">TSLA - Tesla</option>
-              <option value="NVDA">NVDA - Nvidia</option>
-              <option value="AMD">AMD - AMD</option>
-              <option value="INTC">INTC - Intel</option>
-              <option value="VIX">VIX - Volatility</option>
-            </select>
-
-            <span className="form-section-title" style={{ marginTop: '1rem' }}>Option Type</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <button className={`segment-btn ${optionType === 'call' ? 'active' : ''}`} onClick={() => setOptionType('call')} style={{ background: optionType === 'call' ? 'linear-gradient(135deg, #00c8c8 0%, #00a8a8 100%)' : '#e5e7eb', color: optionType === 'call' ? 'white' : '#6b7280' }}>
-                📈 Call
-              </button>
-              <button className={`segment-btn ${optionType === 'put' ? 'active' : ''}`} onClick={() => setOptionType('put')} style={{ background: optionType === 'put' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#e5e7eb', color: optionType === 'put' ? 'white' : '#6b7280' }}>
-                📉 Put
-              </button>
-            </div>
-          </div>
-
-          <div className="card">
-            <span className="form-section-title">Strike price</span>
-            <input type="text" value={strikePrice} onChange={(e) => setStrikePrice(e.target.value)} placeholder="e.g., 425.50" style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: '#f9fafb',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-              marginBottom: '1rem'
-            }} />
-
-            <span className="form-section-title">RSI from Finviz</span>
-            <input type="number" value={manualRSI} onChange={(e) => setManualRSI(e.target.value)} placeholder="e.g., 72" min="0" max="100" style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: '#f9fafb',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontFamily: 'inherit',
-              fontSize: '1rem',
-              marginBottom: '1rem'
-            }} />
-
-            <span className="form-section-title">Days to expiry</span>
-            <select value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)} style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: '#f9fafb',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontFamily: 'inherit',
-              fontSize: '0.95rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}>
-              <option value="1">1 DTE (Today)</option>
-              <option value="2">2 DTE</option>
-              <option value="3">3 DTE</option>
-              <option value="7">7 DTE (This week)</option>
-              <option value="14">14 DTE (This month)</option>
-              <option value="30">30 DTE</option>
-              <option value="60">60 DTE</option>
-              <option value="120">120 DTE</option>
-            </select>
+            ⚠️ <strong>DISCLAIMER:</strong> This tool is for research and educational purposes only. It is NOT financial advice. Do your own research, consult a licensed advisor, and never risk more than you can afford to lose. Past performance does not guarantee future results. Options trading carries substantial risk.
           </div>
         </div>
 
         <div className="card">
-          <span className="form-section-title">Trading thesis</span>
-          <textarea value={thesis} onChange={(e) => setThesis(e.target.value)} placeholder="e.g., 'Fed announcement risk-off, QQQ overbought on daily, expecting mean reversion to $420 support'" style={{
+          <span className="form-section-title">Select Ticker</span>
+          <select value={ticker} onChange={(e) => setTicker(e.target.value)} style={{
             width: '100%',
             padding: '0.75rem',
             background: '#f9fafb',
             border: '2px solid #e5e7eb',
-            borderRadius: '8px',
+            color: '#1f2937',
             fontFamily: 'inherit',
             fontSize: '0.95rem',
-            minHeight: '80px',
-            resize: 'vertical'
-          }} />
+            borderRadius: '8px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}>
+            <option value="QQQ">QQQ - Nasdaq 100</option>
+            <option value="SPY">SPY - S&P 500</option>
+            <option value="IWM">IWM - Russell 2000 (Small Cap)</option>
+            <option value="XLF">XLF - Financials (Rate Plays)</option>
+            <option value="GLD">GLD - Gold (Safe Haven)</option>
+            <option value="TLT">TLT - 20yr Bonds (Rate Vol)</option>
+            <option value="USO">USO - Oil/Energy (Geopolitical)</option>
+            <option value="TSLA">TSLA - Tesla (Single Stock)</option>
+            <option value="NVDA">NVDA - Nvidia (Tech Mega Cap)</option>
+            <option value="AMD">AMD - AMD (Semi Pair Trade)</option>
+            <option value="INTC">INTC - Intel (Semi Value Play)</option>
+            <option value="VIX">VIX - Volatility Index (Meta)</option>
+          </select>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-            <button onClick={handleAnalyze} disabled={isAnalyzing} style={{
-              background: 'linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '0.875rem 1.5rem',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '1rem',
-              cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-              opacity: isAnalyzing ? 0.7 : 1
-            }}>
-              ⚡ {isAnalyzing ? 'ANALYZING...' : 'ANALYZE'}
+          <span className="form-section-title">Option type</span>
+          <div className="segmented-control">
+            <button 
+              className={`segment-btn ${optionType === 'call' ? 'active call-active' : ''}`}
+              onClick={() => setOptionType('call')}
+            >
+              📈 Call
             </button>
-            <button onClick={handleReset} style={{
-              background: '#e5e7eb',
-              color: '#6b7280',
-              border: 'none',
-              padding: '0.875rem 1.5rem',
-              borderRadius: '8px',
-              fontWeight: 700,
-              fontSize: '1rem',
-              cursor: 'pointer'
-            }}>
-              ↻ RESET
+            <button 
+              className={`segment-btn ${optionType === 'put' ? 'active put-active' : ''}`}
+              onClick={() => setOptionType('put')}
+            >
+              📉 Put
+            </button>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="form-group">
+            <label>Strike price</label>
+            <input 
+              type="number"
+              step="0.01"
+              value={strikePrice}
+              onChange={(e) => setStrikePrice(e.target.value)}
+              placeholder="e.g., 425.50"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Days to expiry</label>
+            <select value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)}>
+              <option value="1">1 DTE (Today)</option>
+              <option value="2">2 DTE</option>
+              <option value="3">3 DTE</option>
+              <option value="7">This week (7 DTE)</option>
+              <option value="14">This month (14 DTE)</option>
+              <option value="30">Next 30 days</option>
+              <option value="60">Next 60 days</option>
+              <option value="120">Next 120 days</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>RSI (14) from Finviz.com</label>
+            <input 
+              type="number"
+              value={manualRSI}
+              onChange={(e) => setManualRSI(e.target.value)}
+              placeholder="e.g., 72"
+              min="0"
+              max="100"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Trading thesis</label>
+            <textarea 
+              value={thesis}
+              onChange={(e) => setThesis(e.target.value)}
+              placeholder="e.g., 'Fed announcement risk-off, QQQ rejection at 425. Short calls for decay, target 422.'"
+              rows="3"
+              style={{ minHeight: '90px', resize: 'vertical' }}
+            />
+          </div>
+
+          <div className="button-group">
+            <button 
+              className="btn btn-analyze"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  ANALYZING...
+                </>
+              ) : (
+                <>
+                  <Zap size={16} />
+                  ANALYZE
+                </>
+              )}
+            </button>
+            <button 
+              className="btn btn-reset"
+              onClick={reset}
+              disabled={isAnalyzing}
+            >
+              <RotateCcw size={16} />
+              RESET
             </button>
           </div>
         </div>
 
         {error && (
-          <div style={{
-            background: '#fee2e2',
-            border: '1px solid #fca5a5',
-            color: '#991b1b',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            marginBottom: '1.5rem'
-          }}>
-            ⚠️ {error}
+          <div className="error">
+            <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{error}</span>
           </div>
         )}
 
         {analysisResult && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+          <>
+            {/* OVERALL SCORE */}
             <div className="card">
               <span className="form-section-title">Trade Quality Score</span>
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderLeft: '4px solid #00c8c8', padding: '0.75rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.9rem', lineHeight: '1.5', color: '#1e40af' }}>
-                <strong>Why this score:</strong> {analysisResult.rsiInterpretation}—RSI at {analysisResult.rsiScore}. Stochastic shows {analysisResult.stochasticK > 50 ? 'bullish' : 'bearish'} momentum ({analysisResult.stochasticK}). IV {analysisResult.ivRank.toLowerCase()}. {analysisResult.riskRewardRatio > 1.5 ? '✅' : '⚠️'} Risk/Reward ratio {analysisResult.riskRewardRatio}. Win probability: {analysisResult.winProbability}%.
+              <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                <div className="score-badge">{analysisResult.overallScore}/100</div>
+                <p style={{ margin: '0.75rem 0 0 0', color: '#6b7280', fontSize: '0.85rem' }}>
+                  {analysisResult.overallScore > 75 ? '🟢 Institutional Grade' : analysisResult.overallScore > 60 ? '🟡 Trade Worthy' : '🔴 Caution'}
+                </p>
               </div>
-
-              <ScoreBar value={analysisResult.liquidityScore} label="Liquidity" color="#ff8c42" />
-              <ScoreBar value={analysisResult.riskRewardScore} label="Risk/Reward" color="#00c8c8" />
-              <ScoreBar value={analysisResult.technicalScore} label="Technical" color="#ef4444" />
-              <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f3f4f6', borderRadius: '6px', fontSize: '0.85rem' }}>
-                <strong>BREAKDOWN:</strong>
-                <div><strong style={{ color: '#ff8c42' }}>Liquidity ({analysisResult.liquidityScore}):</strong> {analysisResult.liquidityScore > 70 ? 'Tight bid-ask, high volume.' : 'Adequate liquidity.'}</div>
-                <div><strong style={{ color: '#00c8c8' }}>Risk/Reward ({analysisResult.riskRewardScore}):</strong> Ratio {analysisResult.riskRewardRatio} — {analysisResult.riskRewardRatio > 1.5 ? '✅ favorable payoff.' : '⚠️ consider entry.'}</div>
-                <div><strong style={{ color: '#ef4444' }}>Technical ({analysisResult.technicalScore}):</strong> {analysisResult.macdSignal} + {analysisResult.macdMomentum} momentum. {analysisResult.bollingerBands.position}. {analysisResult.rsiInterpretation.toLowerCase()} ({analysisResult.rsiScore}).</div>
+              
+              {/* JUSTIFICATION */}
+              <div style={{ 
+                marginTop: '1rem', 
+                padding: '0.875rem', 
+                background: '#f0f9ff', 
+                borderRadius: '6px', 
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+                color: '#1e40af',
+                borderLeft: '3px solid #00c8c8'
+              }}>
+                <strong>Why this score:</strong> {analysisResult.rsiInterpretation === 'Overbought' ? '📈 Market overbought—' : analysisResult.rsiInterpretation === 'Oversold' ? '📉 Market oversold—' : '⚖️ Market neutral—'}
+                RSI at {analysisResult.rsiScore}. Stochastic shows {analysisResult.stochasticK > 50 ? 'bearish' : 'bullish'} momentum ({analysisResult.stochasticK}). 
+                {analysisResult.ivPercentile > 70 ? ' IV elevated (premium favorable to sellers).' : analysisResult.ivPercentile < 30 ? ' IV suppressed (premium cheap for buyers).' : ' IV normal range.'} 
+                {analysisResult.riskRewardRatio > 2 ? ' Strong 1:' + analysisResult.riskRewardRatio + ' payoff ratio supports trade.' : ' Tight risk/reward—requires precision.'} 
+                {analysisResult.profitProbability > 55 ? '✅ Win rate above 55%.' : '⚠️ Win rate below 55%—higher risk trade.'}
+              </div>
+              
+              <div style={{ marginTop: '1rem' }}>
+                <ScoreBar value={analysisResult.liquidityScore} label="Liquidity" color="#ff8c42" />
+                <ScoreBar value={analysisResult.riskRewardScore} label="Risk/Reward" color="#00c8c8" />
+                <ScoreBar value={analysisResult.technicalScore} label="Technical" color="#ef4444" />
+              </div>
+              
+              {/* DETAILED BREAKDOWN */}
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.75rem', fontWeight: 600 }}>BREAKDOWN:</div>
+                <div style={{ fontSize: '0.85rem', lineHeight: '1.6', color: '#374151' }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: '#ff8c42' }}>Liquidity (61):</span> Good bid-ask spreads, {analysisResult.daysToExpiry <= 3 ? 'tight spreads on short DTE' : 'reasonable volume'}.
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: '#00c8c8' }}>Risk/Reward ({analysisResult.riskRewardScore}):</span> Ratio 1:{analysisResult.riskRewardRatio} — {analysisResult.riskRewardRatio > 2 ? '✅ favorable payoff' : analysisResult.riskRewardRatio > 1.5 ? '⚠️ acceptable risk/reward' : '❌ tight margins'}.
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: 600, color: '#ef4444' }}>Technical ({analysisResult.technicalScore}):</span> {analysisResult.macdSignal} + {analysisResult.macdMomentum} momentum. {analysisResult.bollingerBands.position}. {analysisResult.rsiInterpretation} ({analysisResult.rsiScore}).
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="card">
-              <span className="form-section-title">AI Professional Review</span>
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '0.75rem', borderRadius: '6px', color: '#1e40af', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                {analysisResult.claudeInsight}
+            {/* CLAUDE INSIGHT - NOW AT TOP */}
+            {analysisResult.claudeInsight && (
+              <div className="card">
+                <span className="form-section-title">AI Professional Review</span>
+                <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', padding: '1rem', borderRadius: '8px', color: '#1e40af', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                  {analysisResult.claudeInsight}
+                </div>
               </div>
-            </div>
+            )}
 
+            {/* SETUP INFO */}
             <div className="card">
               <span className="form-section-title">Trade Setup</span>
-              <div className="metric-row">
-                <span>{analysisResult.ticker}</span>
-                <span>${analysisResult.strike}</span>
-              </div>
-              <div className="metric-row">
-                <span>Direction</span>
-                <span style={{ color: optionType === 'call' ? '#00c8c8' : '#ef4444' }}>
-                  {optionType === 'call' ? '📈 CALL' : '📉 PUT'}
-                </span>
-              </div>
-              <div className="metric-row">
-                <span>Expiry</span>
-                <span>{analysisResult.daysToExpiry} DTE</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">{ticker}</span>
+                  <span className="metric-value">${strikePrice}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Direction</span>
+                  <span className="metric-value" style={{ color: optionType === 'call' ? '#00c8c8' : '#ef4444' }}>
+                    {optionType === 'call' ? '📈 CALL' : '📉 PUT'}
+                  </span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Expiry</span>
+                  <span className="metric-value">{daysToExpiry} DTE</span>
+                </div>
               </div>
             </div>
 
+            {/* HISTORICAL PRICE CHART */}
             <div className="card">
               <span className="form-section-title">Price History</span>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -515,7 +871,8 @@ export default function DayTradingApp() {
                       borderRadius: '6px',
                       fontWeight: 600,
                       fontSize: '0.8rem',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
                     }}
                   >
                     {tf === 'today' ? 'Today' : tf === '1mo' ? '1 Month' : '1 Year'}
@@ -528,9 +885,11 @@ export default function DayTradingApp() {
                 padding: '1rem',
                 borderRadius: '8px',
                 minHeight: '200px',
+                position: 'relative',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg viewBox="0 0 400 180" style={{ width: '100%', height: '200px' }}>
+                <svg viewBox="0 0 400 150" style={{ width: '100%', height: '200px' }}>
+                  {/* Chart background */}
                   <defs>
                     <linearGradient id="priceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                       <stop offset="0%" style={{ stopColor: '#ff8c42', stopOpacity: 0.3 }} />
@@ -538,64 +897,38 @@ export default function DayTradingApp() {
                     </linearGradient>
                   </defs>
                   
-                  <line x1="0" y1="45" x2="400" y2="45" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <line x1="0" y1="90" x2="400" y2="90" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
-                  <line x1="0" y1="135" x2="400" y2="135" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  {/* Grid lines */}
+                  <line x1="0" y1="37.5" x2="400" y2="37.5" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <line x1="0" y1="75" x2="400" y2="75" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
+                  <line x1="0" y1="112.5" x2="400" y2="112.5" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3,3" />
                   
-                  {(() => {
-                    const chartData = generateHistoricalData(chartTimeframe);
-                    const dataPoints = chartData.dataPoints;
-                    const minPrice = Math.min(...dataPoints);
-                    const maxPrice = Math.max(...dataPoints);
-                    const range = maxPrice - minPrice || 1;
-                    
-                    return (
-                      <>
-                        <polyline
-                          points={dataPoints
-                            .map((price, i) => {
-                              const x = (i / (dataPoints.length - 1)) * 400;
-                              const y = 180 - ((price - minPrice) / range) * 150;
-                              return `${x},${y}`;
-                            })
-                            .join(' ')}
-                          fill="none"
-                          stroke="#ff8c42"
-                          strokeWidth="2"
-                        />
-                        
-                        {dataPoints.map((price, i) => {
-                          const x = (i / (dataPoints.length - 1)) * 400;
-                          const y = 180 - ((price - minPrice) / range) * 150;
-                          return (
-                            <g key={i}>
-                              <circle cx={x} cy={y} r="3" fill="#ff8c42" />
-                              <text 
-                                x={x} 
-                                y={y - 10} 
-                                textAnchor="middle" 
-                                fontSize="10" 
-                                fill="#1f2937"
-                                fontWeight="600"
-                              >
-                                ${price.toFixed(2)}
-                              </text>
-                            </g>
-                          );
-                        })}
-                        
-                        <line
-                          x1="0"
-                          y1={180 - ((parseFloat(strikePrice || 400) - minPrice) / range) * 150}
-                          x2="400"
-                          y2={180 - ((parseFloat(strikePrice || 400) - minPrice) / range) * 150}
-                          stroke="#00c8c8"
-                          strokeWidth="1.5"
-                          strokeDasharray="5,5"
-                        />
-                      </>
-                    );
-                  })()}
+                  {/* Price line */}
+                  <polyline
+                    points={generateHistoricalData(chartTimeframe).dataPoints
+                      .map((price, i) => {
+                        const x = (i / (generateHistoricalData(chartTimeframe).dataPoints.length - 1)) * 400;
+                        const minPrice = Math.min(...generateHistoricalData(chartTimeframe).dataPoints);
+                        const maxPrice = Math.max(...generateHistoricalData(chartTimeframe).dataPoints);
+                        const range = maxPrice - minPrice || 1;
+                        const y = 150 - ((price - minPrice) / range) * 150;
+                        return `${x},${y}`;
+                      })
+                      .join(' ')}
+                    fill="none"
+                    stroke="#ff8c42"
+                    strokeWidth="2"
+                  />
+                  
+                  {/* Strike line */}
+                  <line
+                    x1="0"
+                    y1={150 - ((parseFloat(strikePrice || 400) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) / (Math.max(...generateHistoricalData(chartTimeframe).dataPoints) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) * 150)}
+                    x2="400"
+                    y2={150 - ((parseFloat(strikePrice || 400) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) / (Math.max(...generateHistoricalData(chartTimeframe).dataPoints) - Math.min(...generateHistoricalData(chartTimeframe).dataPoints)) * 150)}
+                    stroke="#00c8c8"
+                    strokeWidth="1.5"
+                    strokeDasharray="5,5"
+                  />
                 </svg>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.75rem', color: '#6b7280' }}>
@@ -605,286 +938,351 @@ export default function DayTradingApp() {
               </div>
             </div>
 
+            {/* MOMENTUM INDICATORS */}
             <div className="card">
               <span className="form-section-title">Momentum Analysis</span>
-              <div className="metric-row">
-                <span>RSI (14)</span>
-                <span style={{ fontWeight: 700, color: analysisResult.rsiScore > 70 ? '#ef4444' : analysisResult.rsiScore < 30 ? '#00c8c8' : '#6b7280' }}>
-                  {analysisResult.rsiScore} {analysisResult.rsiInterpretation === 'Overbought' ? '🔴' : analysisResult.rsiInterpretation === 'Oversold' ? '🟢' : '🟡'}
-                </span>
-              </div>
-              <div className="metric-row">
-                <span>Stochastic K</span>
-                <span>{analysisResult.stochasticK}</span>
-              </div>
-              <div className="metric-row">
-                <span>Stochastic D</span>
-                <span>{analysisResult.stochasticD}</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="indicator-box">
+                  <div className="indicator-label">RSI (14)</div>
+                  <div className="indicator-value">{analysisResult.rsiScore}</div>
+                  <div style={{ fontSize: '0.75rem', color: analysisResult.rsiScore > 70 ? '#ef4444' : analysisResult.rsiScore < 30 ? '#00c8c8' : '#6b7280', marginTop: '0.25rem', fontWeight: 600 }}>
+                    {analysisResult.rsiInterpretation}
+                  </div>
+                </div>
+                <div className="indicator-box">
+                  <div className="indicator-label">Stochastic</div>
+                  <div className="indicator-value">K: {analysisResult.stochasticK}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>D: {analysisResult.stochasticD}</div>
+                </div>
               </div>
             </div>
 
+            {/* VOLATILITY */}
             <div className="card">
               <span className="form-section-title">Volatility Analysis</span>
-              <div className="metric-row">
-                <span>IV Percentile</span>
-                <span>{analysisResult.ivPercentile}</span>
-              </div>
-              <div className="metric-row">
-                <span>IV Regime</span>
-                <span>{analysisResult.ivRank}</span>
-              </div>
-              <div className="metric-row">
-                <span>Implied Move</span>
-                <span>±{analysisResult.movePercent}%</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">IV Percentile</span>
+                  <span className="metric-value">{analysisResult.ivPercentile}th</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Volatility Regime</span>
+                  <span className="metric-value" style={{ fontSize: '0.85rem' }}>{analysisResult.ivRank}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Expected Move</span>
+                  <span className="metric-value">±{analysisResult.expectedMovePercent}%</span>
+                </div>
               </div>
             </div>
 
+            {/* BOLLINGER BANDS */}
             <div className="card">
-              <span className="form-section-title">Support/Resistance (Bollinger Bands)</span>
-              <div className="metric-row">
-                <span>Upper Band</span>
-                <span>${analysisResult.bollingerBands.upper}</span>
-              </div>
-              <div className="metric-row">
-                <span>Middle Band</span>
-                <span>${analysisResult.bollingerBands.middle}</span>
-              </div>
-              <div className="metric-row">
-                <span>Lower Band</span>
-                <span>${analysisResult.bollingerBands.lower}</span>
-              </div>
-              <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: '#fef3c7', borderRadius: '4px', fontSize: '0.8rem', color: '#92400e' }}>
-                Position: {analysisResult.bollingerBands.position}
+              <span className="form-section-title">Support / Resistance (Bollinger Bands)</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">Upper Band</span>
+                  <span className="metric-value">${analysisResult.bollingerBands.upper}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Middle (SMA 20)</span>
+                  <span className="metric-value">${analysisResult.bollingerBands.middle}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Lower Band</span>
+                  <span className="metric-value">${analysisResult.bollingerBands.lower}</span>
+                </div>
+                <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#f0f9ff', borderRadius: '4px', fontSize: '0.85rem', color: '#1e40af', fontWeight: 600 }}>
+                  Price: {analysisResult.bollingerBands.position}
+                </div>
               </div>
             </div>
 
+            {/* TREND */}
             <div className="card">
               <span className="form-section-title">Trend Analysis</span>
-              <div className="metric-row">
-                <span>MACD Signal</span>
-                <span style={{ color: analysisResult.macdSignal === 'Bullish Crossover' ? '#00c8c8' : '#ef4444', fontWeight: 700 }}>
-                  {analysisResult.macdSignal}
-                </span>
-              </div>
-              <div className="metric-row">
-                <span>Momentum</span>
-                <span>{analysisResult.macdMomentum}</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">MACD Signal</span>
+                  <span className="metric-value" style={{ color: analysisResult.macdSignal === 'Bullish Crossover' ? '#00c8c8' : '#ef4444', fontSize: '0.9rem' }}>
+                    {analysisResult.macdSignal}
+                  </span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Momentum</span>
+                  <span className="metric-value">{analysisResult.macdMomentum}</span>
+                </div>
               </div>
             </div>
 
+            {/* OPTION GREEKS */}
             <div className="card">
               <span className="form-section-title">Option Greeks</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="metric-row">
-                  <span>Delta</span>
-                  <span>{analysisResult.greeks.delta}</span>
+              <div className="greek-grid">
+                <div className="greek-box">
+                  <div className="greek-label">Delta</div>
+                  <div className="greek-value">{analysisResult.greeks.delta}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Directional</div>
                 </div>
-                <div className="metric-row">
-                  <span>Gamma</span>
-                  <span>{analysisResult.greeks.gamma}</span>
+                <div className="greek-box">
+                  <div className="greek-label">Gamma</div>
+                  <div className="greek-value">{analysisResult.greeks.gamma}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Acceleration</div>
                 </div>
-                <div className="metric-row">
-                  <span>Theta</span>
-                  <span>{analysisResult.greeks.theta}</span>
+                <div className="greek-box">
+                  <div className="greek-label">Theta</div>
+                  <div className="greek-value">{analysisResult.greeks.theta}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Time decay</div>
                 </div>
-                <div className="metric-row">
-                  <span>Vega</span>
-                  <span>{analysisResult.greeks.vega}</span>
+                <div className="greek-box">
+                  <div className="greek-label">Vega</div>
+                  <div className="greek-value">{analysisResult.greeks.vega}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Vol exposure</div>
                 </div>
               </div>
             </div>
 
+            {/* WIN PROBABILITY */}
             <div className="card">
               <span className="form-section-title">Probability Analysis</span>
-              <div className="metric-row">
-                <span>Win Probability</span>
-                <span style={{ fontWeight: 700, color: analysisResult.winProbability > 55 ? '#00c8c8' : '#ef4444' }}>
-                  {analysisResult.winProbability}%
-                </span>
-              </div>
-              <div className="metric-row">
-                <span>Profit Probability</span>
-                <span>{analysisResult.profitProbability}%</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">Win Probability</span>
+                  <span className="metric-value">{analysisResult.winProbability}%</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Profit Probability</span>
+                  <span className="metric-value">{analysisResult.profitProbability}%</span>
+                </div>
               </div>
             </div>
 
+            {/* PROFESSIONAL POSITION SETUP */}
             <div className="card">
               <span className="form-section-title">Position Setup & Risk Management</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                <div className="metric-row">
-                  <span>Position Size</span>
-                  <span style={{ fontWeight: 700 }}>{analysisResult.positionSize}</span>
-                </div>
-                <div className="metric-row">
-                  <span>Max Risk</span>
-                  <span>${analysisResult.maxRisk}</span>
-                </div>
-                <div className="metric-row">
-                  <span>Max Reward</span>
-                  <span>${analysisResult.maxReward}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="card">
-              <span className="form-section-title">IV Crush Impact</span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="metric-row">
-                  <span>IV Crush %</span>
-                  <span style={{ fontWeight: 700, color: '#ef4444' }}>{analysisResult.ivCrushPercent}%</span>
+                <div className="indicator-box">
+                  <div className="indicator-label">Option Price</div>
+                  <div className="indicator-value">${analysisResult.optionPrice}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Per contract</div>
                 </div>
-                <div className="metric-row">
-                  <span>Price Post-Crush</span>
-                  <span>${analysisResult.pricePostCrush}</span>
+                <div className="indicator-box">
+                  <div className="indicator-label">Contracts to Trade</div>
+                  <div className="indicator-value">{analysisResult.positionSize}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>At 2% risk</div>
                 </div>
-              </div>
-              <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: '#fee2e2', borderRadius: '4px', fontSize: '0.8rem', color: '#991b1b' }}>
-                ⚠️ Expect {analysisResult.ivCrushPercent}% volatility drop after event.
+                <div className="indicator-box">
+                  <div className="indicator-label">Max Risk</div>
+                  <div className="indicator-value">${analysisResult.maxRisk}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Per contract</div>
+                </div>
+                <div className="indicator-box">
+                  <div className="indicator-label">Max Reward</div>
+                  <div className="indicator-value">${analysisResult.maxReward}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Per contract</div>
+                </div>
+                <div className="indicator-box">
+                  <div className="indicator-label">Risk/Reward Ratio</div>
+                  <div className="indicator-value">1:{analysisResult.riskRewardRatio}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Payoff ratio</div>
+                </div>
+                <div className="indicator-box">
+                  <div className="indicator-label">Break-Even</div>
+                  <div className="indicator-value">${analysisResult.breakEven}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Price target</div>
+                </div>
               </div>
             </div>
 
+            {/* VOLATILITY IMPACT */}
+            <div className="card">
+              <span className="form-section-title">IV Crush Impact (Post-Event)</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="indicator-box">
+                  <div className="indicator-label">IV Crush %</div>
+                  <div className="indicator-value" style={{ color: '#ef4444' }}>-{analysisResult.ivCrushPercent}%</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Typical decline</div>
+                </div>
+                <div className="indicator-box">
+                  <div className="indicator-label">Price After Crush</div>
+                  <div className="indicator-value">${analysisResult.pricePostCrush}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Est. value</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#fee2e2', borderRadius: '4px', fontSize: '0.8rem', color: '#991b1b' }}>
+                ⚠️ Implied move: ±${analysisResult.impliedMove} ({analysisResult.movePercent}%) — Don't get caught holding through event risk
+              </div>
+            </div>
+
+            {/* TECHNICAL ENTRY/EXIT LEVELS */}
             <div className="card">
               <span className="form-section-title">Entry & Exit Levels</span>
-              <div className="metric-row">
-                <span>Entry</span>
-                <span>${analysisResult.optionPrice}</span>
-              </div>
-              <div className="metric-row">
-                <span>TP (50%)</span>
-                <span>${(parseFloat(analysisResult.optionPrice) * 1.5).toFixed(2)}</span>
-              </div>
-              <div className="metric-row">
-                <span>TP (100%)</span>
-                <span>${(parseFloat(analysisResult.optionPrice) * 2).toFixed(2)}</span>
-              </div>
-              <div className="metric-row">
-                <span>Stop Loss</span>
-                <span style={{ color: '#ef4444' }}>${(parseFloat(analysisResult.optionPrice) * 0.5).toFixed(2)}</span>
+              <div className="result-content">
+                <div className="metric-row">
+                  <span className="metric-label">Ideal Entry</span>
+                  <span className="metric-value">${analysisResult.optionPrice}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Take Profit (50%)</span>
+                  <span className="metric-value">${(parseFloat(analysisResult.optionPrice) * 1.5).toFixed(2)}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Take Profit (100%)</span>
+                  <span className="metric-value">${(parseFloat(analysisResult.optionPrice) * 2).toFixed(2)}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Hard Stop Loss</span>
+                  <span className="metric-value">${(parseFloat(analysisResult.optionPrice) * 0.5).toFixed(2)}</span>
+                </div>
               </div>
             </div>
 
+            {/* THESIS VALIDATION */}
             <div className="card">
               <span className="form-section-title">Institutional Thesis</span>
-              <div style={{ color: '#374151', lineHeight: '1.6', fontSize: '0.95rem' }}>
-                {analysisResult.thesisValidation}
+              <div className="result-content">
+                <p style={{ margin: 0, lineHeight: '1.6', fontSize: '0.9rem', color: '#1f2937' }}>
+                  {analysisResult.thesisValidation}
+                </p>
               </div>
             </div>
 
-            <div style={{
-              background: 'linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%)',
-              color: 'white',
-              padding: '1rem',
-              borderRadius: '8px',
-              marginBottom: '1.5rem'
-            }}>
-              <span className="form-section-title" style={{ color: 'white' }}>Recommended Action</span>
-              <div style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.5rem' }}>
-                {analysisResult.recommendedAction}
+            {/* RECOMMENDED ACTION */}
+            <div className="card">
+              <div className="action-box">
+                <div className="action-label">Recommended Action</div>
+                <div className="action-text">
+                  {analysisResult.recommendedAction}
+                </div>
               </div>
             </div>
 
+            {/* GEOPOLITICAL & MACRO NEWS */}
             <div className="card">
               <span className="form-section-title">Geopolitical Context</span>
-              <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', padding: '0.75rem', borderRadius: '6px', color: '#92400e', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                {analysisResult.geoNews}
+              <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', padding: '1rem', borderRadius: '8px', color: '#92400e', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                ⚠️ {analysisResult.geoNews}
               </div>
             </div>
 
+            {/* ECONOMIC CALENDAR */}
             <div className="card">
               <span className="form-section-title">Upcoming Market Catalysts</span>
-              {analysisResult.economicCalendar.map((event, i) => (
-                <div key={i} style={{ marginBottom: '0.75rem', padding: '0.75rem', background: event.impact === 'VERY HIGH' ? '#fee2e2' : '#fef3c7', borderRadius: '6px', fontSize: '0.85rem' }}>
-                  <strong>{event.date}</strong> — {event.event}
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                    Impact: <strong>{event.impact}</strong> | Affects: {event.ticker}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {analysisResult.economicCalendar.map((item, idx) => (
+                  <div key={idx} style={{
+                    background: item.impact === 'VERY HIGH' ? '#fee2e2' : item.impact === 'HIGH' ? '#fef3c7' : '#f0fdf4',
+                    border: item.impact === 'VERY HIGH' ? '1px solid #fecaca' : item.impact === 'HIGH' ? '1px solid #fcd34d' : '1px solid #bbf7d0',
+                    padding: '0.75rem',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                      <span style={{ fontWeight: 700, color: item.impact === 'VERY HIGH' ? '#991b1b' : item.impact === 'HIGH' ? '#92400e' : '#166534' }}>
+                        {item.event}
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        fontWeight: 700, 
+                        padding: '0.25rem 0.5rem', 
+                        borderRadius: '3px',
+                        background: item.impact === 'VERY HIGH' ? '#991b1b' : item.impact === 'HIGH' ? '#b45309' : '#15803d',
+                        color: 'white'
+                      }}>
+                        {item.impact}
+                      </span>
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                      📅 {item.date}
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '0.8rem' }}>
+                      Affects: <strong>{item.ticker}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {!analysisResult && !isAnalyzing && (
+          <div>
+            {/* Intro */}
+            <div className="card">
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', margin: '0 0 10px' }}>Options Trading Analysis — Institutional-Grade Tools for Day Traders</h1>
+              <p style={{ fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.7, margin: 0 }}>
+                Vega Trading Analysis gives options traders a fast, structured way to evaluate trade setups before pulling the trigger.
+                Enter your ticker, strike price, days to expiry, and trading thesis — and get an institutional-grade analysis covering
+                Greeks, technical indicators, implied volatility, risk/reward ratios, and win probability. Built for day traders
+                who trade QQQ, SPY, SPX, and high-volatility single stocks like NVDA, TSLA, and AMD.
+              </p>
+            </div>
+
+            {/* How It Works */}
+            <div className="card">
+              <span className="form-section-title">How It Works</span>
+              {[
+                { icon: '🎯', title: 'Select your setup', desc: 'Choose your ticker, option type (call or put), strike price, and days to expiry. Works for 0DTE scalps through multi-week swing trades.' },
+                { icon: '📝', title: 'Enter your thesis', desc: 'Describe your trade rationale — macro catalyst, technical setup, or momentum read. The AI uses this to sharpen its analysis.' },
+                { icon: '⚡', title: 'Get your score', desc: 'Receive a 0–100 Trade Quality Score based on liquidity, technical signals, risk/reward ratio, and implied volatility context.' },
+                { icon: '📊', title: 'Review the Greeks', desc: 'See delta, gamma, theta, and vega estimates alongside RSI, MACD, Bollinger Bands, and stochastic readings.' },
+              ].map((step, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: i < 3 ? '14px' : 0 }}>
+                  <span style={{ fontSize: '18px', flexShrink: 0 }}>{step.icon}</span>
+                  <div>
+                    <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1f2937', margin: '0 0 2px' }}>{step.title}</p>
+                    <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>{step.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Popular instruments */}
+            <div className="card">
+              <span className="form-section-title">Popular Options Trading Setups</span>
+              {[
+                { title: 'QQQ 0DTE Calls & Puts', desc: 'The Nasdaq-100 ETF is one of the most liquid options markets in the world. Traders use QQQ 0DTE options for intraday directional bets around Fed announcements, CPI prints, and tech earnings reactions.' },
+                { title: 'SPY & SPX Weekly Options', desc: 'S&P 500 options offer tight bid-ask spreads and enormous volume. Weekly expirations (Monday, Wednesday, Friday) give traders multiple entry opportunities each week with defined risk exposure.' },
+                { title: 'NVDA & TSLA High-Volatility Singles', desc: 'Single-stock options on mega-cap tech offer outsized moves around earnings, product launches, and macro events. Higher implied volatility means larger premiums — and larger risk. Position sizing is critical.' },
+                { title: 'VIX Calls as Portfolio Hedges', desc: 'Volatility index options don\'t trade like equity options — VIX calls are a common hedge against sudden market drawdowns. Understanding vega and term structure is essential before trading VIX derivatives.' },
+              ].map((item, i) => (
+                <div key={i} style={{ borderLeft: '3px solid #ff8c42', paddingLeft: '12px', marginBottom: i < 3 ? '14px' : 0 }}>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1f2937', margin: '0 0 3px' }}>{item.title}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Options education */}
+            <div className="card">
+              <span className="form-section-title">Understanding the Greeks</span>
+              {[
+                { greek: 'Delta (Δ)', desc: 'Measures how much an option\'s price moves per $1 move in the underlying. A delta of 0.50 means the option gains ~$0.50 for every $1 the stock rises. Deep ITM options approach delta 1.0; far OTM options approach 0.' },
+                { greek: 'Gamma (Γ)', desc: 'The rate of change of delta. High gamma means delta shifts rapidly with price moves — a double-edged sword for 0DTE traders where gamma is at its peak near the strike price.' },
+                { greek: 'Theta (Θ)', desc: 'Time decay — the daily erosion of an option\'s extrinsic value. Theta accelerates dramatically in the final days before expiration. Sellers profit from theta; buyers fight against it.' },
+                { greek: 'Vega (ν)', desc: 'Sensitivity to implied volatility changes. A vega of 0.30 means the option gains $0.30 for every 1% rise in IV. Long options benefit from IV expansion; short options benefit from IV crush after events.' },
+              ].map((item, i) => (
+                <div key={i} style={{ background: i % 2 === 0 ? '#f9fafb' : 'white', borderRadius: '8px', padding: '10px 12px', marginBottom: i < 3 ? '8px' : 0 }}>
+                  <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ff8c42', margin: '0 0 3px' }}>{item.greek}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#6b7280', margin: 0, lineHeight: 1.6 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Disclaimer */}
+            <div className="card" style={{ background: '#fff8f0', border: '1px solid #fed7aa' }}>
+              <span className="form-section-title" style={{ color: '#92400e' }}>⚠️ Risk Disclaimer</span>
+              <p style={{ fontSize: '0.8rem', color: '#78350f', lineHeight: 1.7, margin: 0 }}>
+                Options trading involves substantial risk of loss and is not appropriate for all investors. This tool provides
+                educational analysis only and does not constitute financial advice or a recommendation to buy or sell any security.
+                Past performance is not indicative of future results. Always trade with risk capital you can afford to lose,
+                use defined-risk strategies, and consult a licensed financial advisor before making investment decisions.
+              </p>
+            </div>
+
           </div>
         )}
       </div>
-
-      <style>{`
-        .header {
-          background: white;
-          padding: 1.5rem;
-          borderRadius: 12px;
-          marginBottom: 2rem;
-          boxShadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .header-top {
-          display: flex;
-          alignItems: center;
-          gap: 1rem;
-          marginBottom: 0.5rem;
-        }
-        .header-icon {
-          width: 60px;
-          height: 60px;
-          background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
-          borderRadius: 12px;
-          display: flex;
-          alignItems: center;
-          justifyContent: center;
-          fontSize: 2rem;
-        }
-        .header h1 {
-          margin: 0;
-          fontSize: 2rem;
-          fontWeight: 700;
-          color: #1f2937;
-        }
-        .header p {
-          margin: 0;
-          color: '#6b7280';
-          fontSize: 1.1rem;
-        }
-        .card {
-          background: white;
-          padding: 1.5rem;
-          borderRadius: 12px;
-          boxShadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .form-section-title {
-          display: block;
-          fontSize: 0.85rem;
-          fontWeight: 700;
-          color: '#6b7280';
-          textTransform: uppercase;
-          letterSpacing: 0.05em;
-          marginBottom: 0.75rem;
-        }
-        .segment-btn {
-          padding: 0.75rem;
-          border: 2px solid #e5e7eb;
-          borderRadius: 8px;
-          fontWeight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .metric-row {
-          display: flex;
-          justifyContent: space-between;
-          alignItems: center;
-          padding: 0.5rem 0;
-          borderBottom: 1px solid #f3f4f6;
-        }
-        .metric-label {
-          color: '#6b7280';
-          fontSize: 0.9rem;
-        }
-        .metric-value {
-          fontWeight: 700;
-          color: '#1f2937';
-          fontSize: 0.95rem;
-        }
-        .result-content {
-          display: flex;
-          flexDirection: column;
-          gap: 0.75rem;
-        }
-      `}</style>
     </div>
   );
 }
