@@ -48,6 +48,38 @@ export default function DayTradingApp() {
       const contractsToTrade = Math.floor(maxAccountRisk / maxRiskPerContract);
       const totalMaxRisk = contractsToTrade * maxRiskPerContract;
       const totalMaxGain = contractsToTrade * maxGainPerContract;
+
+      // Generate educational summaries
+      const technicalSummary = rsiScore > 70 
+        ? `RSI is ${rsiScore} (overbought) - asset may be due for a pullback. This SUPPORTS bearish trades.`
+        : rsiScore < 30 
+        ? `RSI is ${rsiScore} (oversold) - asset may bounce higher. This SUPPORTS bullish trades.`
+        : `RSI is ${rsiScore} (neutral) - no clear directional bias from momentum.`;
+
+      const riskRewardSummary = riskRewardRatio >= 2
+        ? `R/R of 1:${riskRewardRatio} is excellent - you can win twice what you risk. This STRONGLY SUPPORTS the trade.`
+        : riskRewardRatio >= 1.5
+        ? `R/R of 1:${riskRewardRatio} is good - solid risk/reward balance.`
+        : riskRewardRatio >= 1
+        ? `R/R of 1:${riskRewardRatio} is fair - winning equals risking. Marginal setup.`
+        : `R/R of 1:${riskRewardRatio} is poor - you risk more than you can win. This OPPOSES the trade.`;
+
+      const dteSummary = daysNum <= 1
+        ? `${daysNum} day(s) to expiry - extremely limited time. Fast theta decay helps put sellers, hurts buyers.`
+        : daysNum <= 7
+        ? `${daysNum} days to expiry - short-term play. Theta decay accelerating.`
+        : daysNum <= 30
+        ? `${daysNum} days to expiry - standard monthly expiration. Balanced theta decay.`
+        : `${daysNum} days to expiry - longer timeframe. More time for your thesis to play out.`;
+
+      const contractsSummary = contractsToTrade > 0
+        ? `Based on 2% risk rule: ${contractsToTrade} contract(s) keeps max loss at $${totalMaxRisk.toFixed(0)}.`
+        : `Position size: ${contractsToTrade} (premium too high relative to account).`;
+
+      const ivCrushSummary = vega > 0.05
+        ? `High vega (${vega.toFixed(3)}) - IV changes will significantly impact your P&L. If IV drops 40%, you lose ~$${(vega * 40).toFixed(2)} per contract.`
+        : `Low vega (${vega.toFixed(3)}) - IV changes have minimal impact on position.`;
+
       let thesisAnalysis = '';
       if (userThesis && userThesis.trim().length > 0) {
         const thesisLower = userThesis.toLowerCase();
@@ -80,6 +112,7 @@ export default function DayTradingApp() {
       } else {
         thesisAnalysis = '⚠️ No trade thesis provided. Explain your reasoning before trading.';
       }
+
       let thesisStatement = `${riskRewardRatio >= 2 ? '✅ STRONG' : riskRewardRatio >= 1 ? '⚠️ FAIR' : '❌ WEAK'} SETUP: `;
       if (rsiScore > 70) {
         thesisStatement += `RSI overbought (${rsiScore}). `;
@@ -96,15 +129,18 @@ export default function DayTradingApp() {
       } else {
         thesisStatement += 'Poor R/R. Wait for better setup.';
       }
+
       const ivCrushImpact = [
         { ivChange: -20, label: 'Moderate (-20%)', newPrice: (optionPriceNum + (vega * -20)).toFixed(2), loss: (Math.max(0, optionPriceNum - (optionPriceNum + (vega * -20)))).toFixed(2) },
         { ivChange: -40, label: 'Significant (-40%)', newPrice: (optionPriceNum + (vega * -40)).toFixed(2), loss: (Math.max(0, optionPriceNum - (optionPriceNum + (vega * -40)))).toFixed(2) },
         { ivChange: -60, label: 'Severe (-60%)', newPrice: (optionPriceNum + (vega * -60)).toFixed(2), loss: (Math.max(0, optionPriceNum - (optionPriceNum + (vega * -60)))).toFixed(2) }
       ];
+
       const liquidityScore = 85;
       const riskRewardScore = riskRewardRatio >= 2 ? 85 : riskRewardRatio >= 1 ? 70 : 45;
       const technicalScore = rsiScore > 70 || rsiScore < 30 ? 75 : 60;
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
+
       setAnalysisResult({
         ticker, strikePrice: strikeNum, optionPrice: optionPriceNum, daysToExpiry: daysNum, lastClose: currentPriceNum,
         priceFound: realData.lastClose !== strikePrice.toString(), rsiScore, rsiInterpretation: realData.rsiInterpretation || 'Neutral',
@@ -113,6 +149,7 @@ export default function DayTradingApp() {
         maxRiskPerContract: maxRiskPerContract.toFixed(2), maxGainPerContract: maxGainPerContract.toFixed(2), riskRewardRatio,
         breakEvenPrice: breakEvenPrice.toFixed(2), priceMove: priceMove.toFixed(2), priceMovePercent, contractsToTrade,
         totalMaxRisk: totalMaxRisk.toFixed(2), totalMaxGain: totalMaxGain.toFixed(2), thesisStatement, userThesis, thesisAnalysis, ivCrushImpact,
+        technicalSummary, riskRewardSummary, dteSummary, contractsSummary, ivCrushSummary,
         weeklyEvents: `📅 ECONOMIC CALENDAR:\n🔴 CPI - Wednesday 8:30 AM\n🟠 Jobless Claims - Thursday 8:30 AM\n🟠 Retail Sales - Friday 8:30 AM\n\n💼 EARNINGS:\n📊 NVDA - Aug 26 (After Hours)\n📊 MSFT - Jul 29 (After Hours)\n📊 TSLA - Jul 21 (After Hours)\n📊 META - Jul 30 (After Hours)\n📊 AAPL - Aug 1 (After Hours)\n📊 GOOGL - Jul 29 (After Hours)`
       });
     } catch (err) {
@@ -146,7 +183,7 @@ export default function DayTradingApp() {
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
-              <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
@@ -225,16 +262,58 @@ export default function DayTradingApp() {
             </div>
 
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📊 Technical Indicators</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem' }}>RSI (14)</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: analysisResult.rsiScore > 70 ? '#ef4444' : analysisResult.rsiScore < 30 ? '#00c8c8' : '#6b7280' }}>{analysisResult.rsiScore}</div><div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{analysisResult.rsiInterpretation}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem' }}>Stochastic K</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{analysisResult.stochasticK}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem' }}>MACD</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{analysisResult.macdSignal}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem' }}>IV Percentile</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{analysisResult.ivPercentile}%</div></div>
             </div>
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '1rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#1e40af', lineHeight: '1.6' }}>
+              <strong>📚 What This Means:</strong> {analysisResult.technicalSummary}
+            </div>
 
-            <div style={{ background: analysisResult.riskRewardRatio >= 2 ? '#ecfdf5' : analysisResult.riskRewardRatio >= 1 ? '#fffbeb' : '#fef2f2', border: `2px solid ${analysisResult.riskRewardRatio >= 2 ? '#10b981' : analysisResult.riskRewardRatio >= 1 ? '#f59e0b' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: analysisResult.riskRewardRatio >= 2 ? '#065f46' : analysisResult.riskRewardRatio >= 1 ? '#92400e' : '#7f1d1d' }}>💡 Trade Thesis</h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: analysisResult.riskRewardRatio >= 2 ? '#047857' : analysisResult.riskRewardRatio >= 1 ? '#b45309' : '#991b1b' }}>{analysisResult.thesisStatement}</p>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>💰 Risk/Reward Analysis</h3>
+            <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Max Risk/Contract</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.maxRiskPerContract}</div></div>
+                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Max Gain/Contract</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>${analysisResult.maxGainPerContract}</div></div>
+                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Risk/Reward Ratio</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.riskRewardRatio >= 2 ? '#10b981' : analysisResult.riskRewardRatio >= 1 ? '#f59e0b' : '#ef4444' }}>1:{analysisResult.riskRewardRatio}</div></div>
+                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Breakeven Price</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.breakEvenPrice}</div></div>
+              </div>
+            </div>
+            <div style={{ background: analysisResult.riskRewardRatio >= 2 ? '#ecfdf5' : analysisResult.riskRewardRatio >= 1 ? '#fffbeb' : '#fef2f2', border: `1px solid ${analysisResult.riskRewardRatio >= 2 ? '#86efac' : analysisResult.riskRewardRatio >= 1 ? '#fcd34d' : '#fca5a5'}`, borderRadius: '6px', padding: '1rem', marginBottom: '2rem', fontSize: '0.85rem', color: analysisResult.riskRewardRatio >= 2 ? '#166534' : analysisResult.riskRewardRatio >= 1 ? '#92400e' : '#7c2d12', lineHeight: '1.6' }}>
+              <strong>📚 What This Means:</strong> {analysisResult.riskRewardSummary}
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⏰ Time to Expiry & Position Sizing</h3>
+            <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
+              <div style={{ marginBottom: '0.75rem' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Days to Expiry</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{analysisResult.daysToExpiry}</div></div>
+              <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Contracts (2% Rule)</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.contractsToTrade}</div></div>
+            </div>
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '1rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#1e40af', lineHeight: '1.6' }}>
+              <strong>📚 What This Means:</strong> {analysisResult.dteSummary} {analysisResult.contractsSummary}
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ IV Crush Impact (Volatility Risk)</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              {analysisResult.ivCrushImpact.map((scenario, idx) => (
+                <div key={idx} style={{ background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: '6px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9a3412', marginBottom: '0.5rem' }}>{scenario.label}</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#dc2626', marginBottom: '0.25rem' }}>${scenario.newPrice}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#7c2d12' }}>Loss: ${scenario.loss}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '1rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#92400e', lineHeight: '1.6' }}>
+              <strong>📚 What This Means:</strong> {analysisResult.ivCrushSummary}
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ The Greeks (Advanced)</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Delta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.delta}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Move $1 = +${(parseFloat(analysisResult.delta) * 100).toFixed(0)}</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Gamma</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.gamma}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Delta acceleration</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Theta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.theta}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Daily decay</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Vega</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>{analysisResult.vega}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>IV sensitivity</div></div>
             </div>
 
             {analysisResult.userThesis && (
@@ -248,48 +327,12 @@ export default function DayTradingApp() {
               </div>
             )}
 
-            <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>📰 This Week's Events</h3>
-              <div style={{ fontSize: '0.85rem', color: '#78350f', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{analysisResult.weeklyEvents}</div>
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>💰 Position Setup</h3>
-            <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Max Risk/Contract</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.maxRiskPerContract}</div></div>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Max Gain/Contract</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981' }}>${analysisResult.maxGainPerContract}</div></div>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Risk/Reward Ratio</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.riskRewardRatio >= 2 ? '#10b981' : analysisResult.riskRewardRatio >= 1 ? '#f59e0b' : '#ef4444' }}>1:{analysisResult.riskRewardRatio}</div></div>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Breakeven Price</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.breakEvenPrice}</div></div>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Contracts (2%)</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.contractsToTrade}</div></div>
-                <div><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Total Risk</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>${analysisResult.totalMaxRisk}</div></div>
-              </div>
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ IV Crush Impact</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              {analysisResult.ivCrushImpact.map((scenario, idx) => (
-                <div key={idx} style={{ background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: '6px', padding: '1rem' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9a3412', marginBottom: '0.5rem' }}>{scenario.label}</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#dc2626', marginBottom: '0.25rem' }}>${scenario.newPrice}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#7c2d12' }}>Loss: ${scenario.loss}</div>
-                </div>
-              ))}
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ The Greeks</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Delta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.delta}</div></div>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Gamma</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.gamma}</div></div>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Theta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.theta}</div></div>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Vega</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>{analysisResult.vega}</div></div>
-            </div>
-
             <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
               <div style={{ fontSize: '3rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#f59e0b' : '#dc2626', marginBottom: '0.5rem' }}>{analysisResult.overallScore}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#d97706' : '#dc2626' }}>
+              <div style={{ fontSize: '1rem', fontWeight: 600, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#d97706' : '#dc2626', marginBottom: '1rem' }}>
                 {analysisResult.overallScore > 75 ? '🟢 Institutional Grade' : analysisResult.overallScore > 60 ? '🟡 Trade Worthy' : '🔴 Caution'}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Liquidity</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.liquidityScore}</div></div>
                 <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Risk/Reward</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.riskRewardScore}</div></div>
                 <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Technical</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.technicalScore}</div></div>
