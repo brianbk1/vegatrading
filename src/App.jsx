@@ -100,9 +100,12 @@ export default function DayTradingApp() {
       const theta = -(optionPriceNum / (daysNum || 1)) * 0.1;
       const vega = (strikeNum * gamma * Math.sqrt(Math.max(1, daysNum / 365))) / 100;
       const maxRiskPerContract = optionPriceNum;
-      const maxGainPerContract = optionType === 'call' 
-        ? Math.max(currentPriceNum - strikeNum - optionPriceNum, 0)
-        : Math.max(strikeNum - currentPriceNum - optionPriceNum, 0);
+      // For day traders: premium increases with stock movement
+      // Using delta to estimate premium change: if stock moves $1, premium changes ~delta dollars
+      // For a realistic $5-10 move, estimate gain
+      const estimatedMoveForProfit = 5; // Assume $5 stock move for profit potential
+      const estimatedPremiumGain = Math.abs(delta * estimatedMoveForProfit);
+      const maxGainPerContract = Math.min(estimatedPremiumGain, optionPriceNum * 2); // Cap at 2x premium
       const riskRewardRatio = maxRiskPerContract > 0 ? (maxGainPerContract / maxRiskPerContract).toFixed(2) : 0;
       const breakEvenPrice = strikeNum + optionPriceNum;
       const priceMove = Math.abs(breakEvenPrice - currentPriceNum);
