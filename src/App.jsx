@@ -287,16 +287,6 @@ export default function DayTradingApp() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Account Size ($)</label>
-              <input
-                type="number"
-                value={accountSize}
-                onChange={(e) => setAccountSize(parseFloat(e.target.value))}
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
-              />
-            </div>
-
             {error && <div style={{ color: '#dc2626', marginBottom: '1rem', fontWeight: 600 }}>⚠️ {error}</div>}
 
             <div style={{ display: 'flex', gap: '1rem' }}>
