@@ -29,45 +29,93 @@ export default async function handler(req, res) {
       }
 
       let optionsChain = [];
+      
+      // Try different Polygon endpoints for options
       try {
+        console.log(`[Polygon] Trying /v3/snapshot/options/chains endpoint`);
         const chainRes = await fetch(
-          `https://api.polygon.io/v3/snapshot/options/chains/${ticker}?expiration_date=${expiryDate}&limit=100&apikey=${polygonKey}`
+          `https://api.polygon.io/v3/snapshot/options/chains/${ticker}?expiration_date=${expiryDate}&limit=250&apikey=${polygonKey}`
         );
-
+        
+        console.log(`[Polygon] Response status: ${chainRes.status}`);
+        
         if (chainRes.ok) {
           const chainData = await chainRes.json();
-          console.log(`[Polygon] Chain response status: ${chainRes.status}`, chainData);
-          if (chainData.results && chainData.results.length > 0) {
+          console.log(`[Polygon] Response keys:`, Object.keys(chainData));
+          console.log(`[Polygon] Full response (first 500 chars):`, JSON.stringify(chainData).substring(0, 500));
+          
+          if (chainData.results && Array.isArray(chainData.results) && chainData.results.length > 0) {
+            console.log(`[Polygon] Found ${chainData.results.length} results`);
+            console.log(`[Polygon] First result:`, JSON.stringify(chainData.results[0]));
+            
             optionsChain = chainData.results
               .map(opt => ({
-                strike: opt.details?.strike_price || 0,
-                bid: opt.bid_price || 0,
-                ask: opt.ask_price || 0,
-                mid: ((opt.bid_price || 0) + (opt.ask_price || 0)) / 2,
-                iv: opt.open_interest || 0,
+                strike: opt.details?.strike_price || opt.strike_price || 0,
+                bid: opt.bid_price || opt.bid || 0,
+                ask: opt.ask_price || opt.ask || 0,
+                mid: ((opt.bid_price || opt.bid || 0) + (opt.ask_price || opt.ask || 0)) / 2,
+                iv: opt.implied_volatility || opt.impliedVolatility || 0,
                 delta: opt.delta || 0,
                 type: opt.details?.contract_type === 'call' ? 'CALL' : 'PUT'
               }))
-              .filter(opt => opt.strike > 0 && (opt.bid > 0 || opt.ask > 0))
+              .filter(opt => opt.strike > 0)
               .sort((a, b) => a.strike - b.strike);
-            console.log(`[Polygon] ✅ Got ${optionsChain.length} strikes`);
+            
+            console.log(`[Polygon] ✅ Parsed ${optionsChain.length} strikes`);
           } else {
-            console.log(`[Polygon] No results in response - may not have options data for ${ticker} on ${expiryDate}`);
+            console.log(`[Polygon] No results array found in response`);
           }
         } else {
           const errText = await chainRes.text();
-          console.log(`[Polygon] Status ${chainRes.status}: ${errText.substring(0, 200)}`);
+          console.log(`[Polygon] Request failed - Status ${chainRes.status}: ${errText.substring(0, 300)}`);
         }
       } catch (err) {
         console.log('[Polygon] Chain fetch error:', err.message);
       }
 
+      // Try /v1/snapshot/options endpoint as fallback
+      if (optionsChain.length === 0) {
+        try {
+          console.log(`[Polygon] Trying /v1/snapshot/options fallback`);
+          const fallbackRes = await fetch(
+            `https://api.polygon.io/v1/snapshot/options/${ticker}?apikey=${polygonKey}`
+          );
+          
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            console.log(`[Polygon] Fallback response:`, Object.keys(fallbackData));
+            
+            if (fallbackData.results && Array.isArray(fallbackData.results)) {
+              optionsChain = fallbackData.results
+                .filter(opt => opt.expiration_date === expiryDate)
+                .map(opt => ({
+                  strike: opt.strike_price || 0,
+                  bid: opt.bid || 0,
+                  ask: opt.ask || 0,
+                  mid: ((opt.bid || 0) + (opt.ask || 0)) / 2,
+                  iv: opt.implied_volatility || 0,
+                  delta: opt.delta || 0,
+                  type: opt.contract_type
+                }))
+                .filter(opt => opt.strike > 0)
+                .sort((a, b) => a.strike - b.strike);
+              
+              if (optionsChain.length > 0) {
+                console.log(`[Polygon] ✅ Fallback got ${optionsChain.length} strikes`);
+              }
+            }
+          }
+        } catch (err) {
+          console.log('[Polygon] Fallback error:', err.message);
+        }
+      }
+
+      console.log(`[Polygon] Final result: ${optionsChain.length} strikes`);
       return res.status(200).json({
         optionsChain,
         currentPrice,
         ticker,
         expiryDate,
-        message: optionsChain.length === 0 ? 'Polygon options data not available. Use manual entry with your broker\'s prices.' : undefined,
         dataSource: optionsChain.length > 0 ? 'polygon' : 'fallback'
       });
     }
