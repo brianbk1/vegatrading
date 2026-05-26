@@ -13,26 +13,34 @@ export default function DayTradingApp() {
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionType, setOptionType] = useState('call'); // 'call' or 'put'
 
-  // Fetch current price from Claude when ticker changes
+  // Fetch current price from Polygon when ticker changes
   const handleTickerChange = async (newTicker) => {
-    setTicker(newTicker.toUpperCase());
-    if (newTicker.length >= 1) {
-      console.log(`📍 Fetching price for: ${newTicker.toUpperCase()}`);
+    const upperTicker = newTicker.toUpperCase();
+    setTicker(upperTicker);
+    
+    // Check localStorage first
+    const cachedPrice = localStorage.getItem(`price_${upperTicker}`);
+    if (cachedPrice) {
+      setCurrentPrice(parseFloat(cachedPrice));
+      console.log(`📍 Loaded cached price from localStorage: ${cachedPrice}`);
+    }
+    
+    // Then fetch fresh price
+    if (upperTicker.length >= 1) {
+      console.log(`📍 Fetching fresh price for: ${upperTicker}`);
       try {
         const res = await fetch('/api/fetch-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticker: newTicker.toUpperCase(), getPrice: true }),
+          body: JSON.stringify({ ticker: upperTicker, getPrice: true }),
         });
         const data = await res.json();
-        console.log(`📍 Price response:`, data);
+        console.log(`📍 Fresh price response:`, data);
         if (data.price && data.price > 1) {
           console.log(`📍 Setting current price to: ${data.price}`);
           setCurrentPrice(data.price);
           // Store in localStorage to persist
-          localStorage.setItem(`price_${newTicker.toUpperCase()}`, data.price);
-        } else {
-          console.log(`📍 No valid price in response`);
+          localStorage.setItem(`price_${upperTicker}`, data.price.toString());
         }
       } catch (err) {
         console.log('📍 Price fetch failed:', err.message);
@@ -253,11 +261,11 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
-              {(currentPrice && currentPrice > 1) || (ticker && localStorage.getItem(`price_${ticker}`)) ? (
+              {currentPrice && currentPrice > 1 && (
                 <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.25rem', fontWeight: 600 }}>
-                  💵 Current Price: ${(currentPrice > 1 ? currentPrice : parseFloat(localStorage.getItem(`price_${ticker}`))).toFixed(2)}
+                  💵 Current Price: ${currentPrice.toFixed(2)}
                 </div>
-              ) : null}
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
