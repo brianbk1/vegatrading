@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 export default function DayTradingApp() {
-  const [ticker, setTicker] = useState('QQQ');
+  const [ticker, setTicker] = useState('');
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
   const [accountSize, setAccountSize] = useState(50000);
