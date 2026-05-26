@@ -200,6 +200,11 @@ export default function DayTradingApp() {
     setError('');
   };
 
+  const generateClaudeUrl = (question) => {
+    const tradeData = `I'm analyzing an options trade and need your help. Here's my trade:\n\nTICKER: ${analysisResult.ticker}\nTYPE: ${analysisResult.optionType.toUpperCase()}\nSTRIKE: $${analysisResult.strikePrice.toFixed(2)}\nCURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}\nOPTION PRICE: $${analysisResult.optionPrice}\nDAYS TO EXPIRY: ${analysisResult.daysToExpiry}\nRSI: ${analysisResult.rsiScore}\nRISK/REWARD: 1:${analysisResult.riskRewardRatio}\nMAX RISK: $${analysisResult.maxRiskPerContract}\nMAX GAIN: $${analysisResult.maxGainPerContract}\nOVERALL SCORE: ${analysisResult.overallScore}/100\nVERDICT: ${analysisResult.plainEnglishVerdict}\n\n${question}`;
+    return `https://claude.ai?prompt=${encodeURIComponent(tradeData)}`;
+  };
+
   return (
     <div style={{ background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1f2937' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -428,21 +433,7 @@ export default function DayTradingApp() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
                 <a 
-                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
-
-TICKER: ${analysisResult.ticker}
-STRIKE: $${analysisResult.strikePrice.toFixed(2)}
-CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
-OPTION PRICE: $${analysisResult.optionPrice}
-DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
-RSI: ${analysisResult.rsiScore}
-RISK/REWARD: 1:${analysisResult.riskRewardRatio}
-MAX RISK: $${analysisResult.maxRiskPerContract}
-MAX GAIN: $${analysisResult.maxGainPerContract}
-OVERALL SCORE: ${analysisResult.overallScore}/100
-VERDICT: ${analysisResult.plainEnglishVerdict}
-
-My question: `)}
+                  href={generateClaudeUrl('My question:')}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -462,21 +453,7 @@ My question: `)}
                 </a>
                 
                 <a 
-                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
-
-TICKER: ${analysisResult.ticker}
-STRIKE: $${analysisResult.strikePrice.toFixed(2)}
-CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
-OPTION PRICE: $${analysisResult.optionPrice}
-DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
-RSI: ${analysisResult.rsiScore}
-RISK/REWARD: 1:${analysisResult.riskRewardRatio}
-MAX RISK: $${analysisResult.maxRiskPerContract}
-MAX GAIN: $${analysisResult.maxGainPerContract}
-OVERALL SCORE: ${analysisResult.overallScore}/100
-VERDICT: ${analysisResult.plainEnglishVerdict}
-
-Should I take this trade or wait for a better setup?`)}
+                  href={generateClaudeUrl('Should I take this trade or wait for a better setup?')}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -498,21 +475,7 @@ Should I take this trade or wait for a better setup?`)}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <a 
-                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
-
-TICKER: ${analysisResult.ticker}
-STRIKE: $${analysisResult.strikePrice.toFixed(2)}
-CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
-OPTION PRICE: $${analysisResult.optionPrice}
-DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
-RSI: ${analysisResult.rsiScore}
-RISK/REWARD: 1:${analysisResult.riskRewardRatio}
-MAX RISK: $${analysisResult.maxRiskPerContract}
-MAX GAIN: $${analysisResult.maxGainPerContract}
-OVERALL SCORE: ${analysisResult.overallScore}/100
-VERDICT: ${analysisResult.plainEnglishVerdict}
-
-What if I pick a different strike price? How would that change the R/R?`)}
+                  href={generateClaudeUrl('What if I pick a different strike price? How would that change the R/R?')}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -532,21 +495,7 @@ What if I pick a different strike price? How would that change the R/R?`)}
                 </a>
                 
                 <a 
-                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
-
-TICKER: ${analysisResult.ticker}
-STRIKE: $${analysisResult.strikePrice.toFixed(2)}
-CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
-OPTION PRICE: $${analysisResult.optionPrice}
-DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
-RSI: ${analysisResult.rsiScore}
-RISK/REWARD: 1:${analysisResult.riskRewardRatio}
-MAX RISK: $${analysisResult.maxRiskPerContract}
-MAX GAIN: $${analysisResult.maxGainPerContract}
-OVERALL SCORE: ${analysisResult.overallScore}/100
-VERDICT: ${analysisResult.plainEnglishVerdict}
-
-How do I manage this trade if it goes against me? What's my exit strategy?`)}
+                  href={generateClaudeUrl('How do I manage this trade if it goes against me? What is my exit strategy?')}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
