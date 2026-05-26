@@ -10,6 +10,7 @@ export default function DayTradingApp() {
   const [error, setError] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
+  const [optionType, setOptionType] = useState('call'); // 'call' or 'put'
 
   const handleAnalyze = async () => {
     if (!strikePrice || !optionPrice) {
@@ -22,7 +23,7 @@ export default function DayTradingApp() {
       const dataResponse = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker, strikePrice, daysToExpiry, optionPrice }),
+        body: JSON.stringify({ ticker, strikePrice, daysToExpiry, optionPrice, optionType }),
       });
       if (!dataResponse.ok) throw new Error('API error');
       const realData = await dataResponse.json();
@@ -39,7 +40,9 @@ export default function DayTradingApp() {
       const theta = -(optionPriceNum / (daysNum || 1)) * 0.1;
       const vega = (strikeNum * gamma * Math.sqrt(Math.max(1, daysNum / 365))) / 100;
       const maxRiskPerContract = optionPriceNum;
-      const maxGainPerContract = Math.max(currentPriceNum - strikeNum - optionPriceNum, 0);
+      const maxGainPerContract = optionType === 'call' 
+        ? Math.max(currentPriceNum - strikeNum - optionPriceNum, 0)
+        : Math.max(strikeNum - currentPriceNum - optionPriceNum, 0);
       const riskRewardRatio = maxRiskPerContract > 0 ? (maxGainPerContract / maxRiskPerContract).toFixed(2) : 0;
       const breakEvenPrice = strikeNum + optionPriceNum;
       const priceMove = Math.abs(breakEvenPrice - currentPriceNum);
@@ -131,23 +134,24 @@ export default function DayTradingApp() {
       }
 
       // Plain English explanation for novices
-      let plainEnglishVerdict = '';
+      let plainEnglishVerdict = `This is a ${optionType.toUpperCase()} option (${optionType === 'call' ? 'you profit if stock GOES UP' : 'you profit if stock GOES DOWN'}). `;
+      
       if (riskRewardRatio >= 2) {
-        plainEnglishVerdict = `This is a GOOD trade setup. You could make $${maxGainPerContract} for every $${maxRiskPerContract} you risk—that's a 2:1 payoff. `;
+        plainEnglishVerdict += `This is a GOOD trade setup. You could make $${maxGainPerContract} for every $${maxRiskPerContract} you risk—that's a 2:1 payoff. `;
         if (rsiScore > 70 || rsiScore < 30) {
           plainEnglishVerdict += `The technicals also look strong (RSI is extreme), so this could be a nice win if the stock moves as expected. Just watch your break-even point.`;
         } else {
           plainEnglishVerdict += `The technicals are neutral, so make sure your catalyst is solid.`;
         }
       } else if (riskRewardRatio >= 1) {
-        plainEnglishVerdict = `This is a FAIR trade setup. You risk $${maxRiskPerContract} to make $${maxGainPerContract}—basically breakeven odds. Only take this if you have a really strong reason to believe the stock will move your way. `;
+        plainEnglishVerdict += `This is a FAIR trade setup. You risk $${maxRiskPerContract} to make $${maxGainPerContract}—basically breakeven odds. Only take this if you have a really strong reason to believe the stock will move your way. `;
         if (rsiScore > 70 || rsiScore < 30) {
           plainEnglishVerdict += `The RSI is extreme, which helps your case.`;
         } else {
           plainEnglishVerdict += `The technicals don't strongly support you, so be extra careful.`;
         }
       } else {
-        plainEnglishVerdict = `This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. `;
+        plainEnglishVerdict = `This is a ${optionType.toUpperCase()} option (${optionType === 'call' ? 'you profit if stock GOES UP' : 'you profit if stock GOES DOWN'}). This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. `;
         if (riskRewardRatio > 0.5) {
           plainEnglishVerdict += `Unless you have a very specific catalyst (earnings, major news), skip this and wait for a better opportunity.`;
         } else {
@@ -169,7 +173,7 @@ export default function DayTradingApp() {
       const overallScore = Math.round((liquidityScore + riskRewardScore + technicalScore) / 3);
 
       setAnalysisResult({
-        ticker, strikePrice: strikeNum, optionPrice: optionPriceNum, daysToExpiry: daysNum, lastClose: currentPriceNum,
+        ticker, optionType, strikePrice: strikeNum, optionPrice: optionPriceNum, daysToExpiry: daysNum, lastClose: currentPriceNum,
         priceFound: realData.lastClose !== strikePrice.toString(), rsiScore, rsiInterpretation: realData.rsiInterpretation || 'Neutral',
         stochasticK, macdSignal: realData.macdSignal || 'Neutral', ivPercentile, liquidityScore, riskRewardScore, technicalScore, overallScore,
         delta: delta.toFixed(2), gamma: gamma.toFixed(4), theta: theta.toFixed(4), vega: vega.toFixed(3),
@@ -211,6 +215,39 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <button
+                onClick={() => setOptionType('call')}
+                style={{
+                  padding: '0.75rem',
+                  background: optionType === 'call' ? '#00c8c8' : '#e0f2fe',
+                  color: optionType === 'call' ? 'white' : '#0369a1',
+                  border: '2px solid #00c8c8',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                📈 CALL (Bullish)
+              </button>
+              <button
+                onClick={() => setOptionType('put')}
+                style={{
+                  padding: '0.75rem',
+                  background: optionType === 'put' ? '#00c8c8' : '#e0f2fe',
+                  color: optionType === 'put' ? 'white' : '#0369a1',
+                  border: '2px solid #00c8c8',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                📉 PUT (Bearish)
+              </button>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
@@ -289,10 +326,10 @@ export default function DayTradingApp() {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>Analysis Results</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Type</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.optionType === 'call' ? '#10b981' : '#ef4444' }}>{analysisResult.optionType === 'call' ? '📈 CALL' : '📉 PUT'}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ticker</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{analysisResult.ticker}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Strike</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.strikePrice.toFixed(2)}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Current Price</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.lastClose.toFixed(2)}</div></div>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Option Price</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.optionPrice.toFixed(2)}</div></div>
             </div>
 
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📊 Technical Indicators</h3>
@@ -377,35 +414,159 @@ export default function DayTradingApp() {
             </div>
 
             <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>🤖 Ask AI More Questions</h3>
-              <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#374151' }}>Have questions about this trade? Ask Claude AI for more analysis:</p>
-              <textarea 
-                id="aiQuestion" 
-                placeholder="e.g., Should I wait for RSI to cool down? What if earnings come before expiration? Is this a good hedge?" 
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #00c8c8', borderRadius: '6px', fontSize: '0.9rem', fontFamily: 'system-ui', minHeight: '80px', resize: 'vertical', marginBottom: '1rem' }} 
-              />
-              <a 
-                href={`https://claude.ai?prompt=I'm+analyzing+a+${analysisResult.ticker}+options+trade:+Strike+$${analysisResult.strikePrice.toFixed(2)},+Price+$${analysisResult.optionPrice},+${analysisResult.daysToExpiry}+DTE,+RSI+${analysisResult.rsiScore},+R/R+1:${analysisResult.riskRewardRatio}.+Ask+me+your+question+in+the+chat+box+below+this+message.`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-block',
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: '#00c8c8',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  fontSize: '0.95rem'
-                }}
-              >
-                💬 Open Claude Chat with Trade Details
-              </a>
-              <p style={{ margin: '1rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>Your trade data will be shared in the prompt so Claude can give specific feedback.</p>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>🤖 Ask Claude AI About This Trade</h3>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#374151' }}>Click below to ask Claude detailed questions about your trade. Your trade data is automatically included:</p>
+              
+              <div style={{ background: 'white', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#374151', lineHeight: '1.6' }}>
+                <strong>Trade Summary Being Sent:</strong><br/>
+                • Ticker: {analysisResult.ticker}<br/>
+                • Strike: ${analysisResult.strikePrice.toFixed(2)} | Current: ${analysisResult.lastClose.toFixed(2)}<br/>
+                • Option Price: ${analysisResult.optionPrice} | DTE: {analysisResult.daysToExpiry} days<br/>
+                • RSI: {analysisResult.rsiScore} | R/R: 1:{analysisResult.riskRewardRatio} | Score: {analysisResult.overallScore}<br/>
+                • Max Risk: ${analysisResult.maxRiskPerContract} | Max Gain: ${analysisResult.maxGainPerContract}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <a 
+                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
+
+TICKER: ${analysisResult.ticker}
+STRIKE: $${analysisResult.strikePrice.toFixed(2)}
+CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
+OPTION PRICE: $${analysisResult.optionPrice}
+DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
+RSI: ${analysisResult.rsiScore}
+RISK/REWARD: 1:${analysisResult.riskRewardRatio}
+MAX RISK: $${analysisResult.maxRiskPerContract}
+MAX GAIN: $${analysisResult.maxGainPerContract}
+OVERALL SCORE: ${analysisResult.overallScore}/100
+VERDICT: ${analysisResult.plainEnglishVerdict}
+
+My question: `)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.75rem',
+                    background: '#00c8c8',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  💬 Ask a Question
+                </a>
+                
+                <a 
+                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
+
+TICKER: ${analysisResult.ticker}
+STRIKE: $${analysisResult.strikePrice.toFixed(2)}
+CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
+OPTION PRICE: $${analysisResult.optionPrice}
+DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
+RSI: ${analysisResult.rsiScore}
+RISK/REWARD: 1:${analysisResult.riskRewardRatio}
+MAX RISK: $${analysisResult.maxRiskPerContract}
+MAX GAIN: $${analysisResult.maxGainPerContract}
+OVERALL SCORE: ${analysisResult.overallScore}/100
+VERDICT: ${analysisResult.plainEnglishVerdict}
+
+Should I take this trade or wait for a better setup?`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.75rem',
+                    background: '#ff8c42',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  ⚡ Take This Trade or Wait?
+                </a>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <a 
+                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
+
+TICKER: ${analysisResult.ticker}
+STRIKE: $${analysisResult.strikePrice.toFixed(2)}
+CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
+OPTION PRICE: $${analysisResult.optionPrice}
+DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
+RSI: ${analysisResult.rsiScore}
+RISK/REWARD: 1:${analysisResult.riskRewardRatio}
+MAX RISK: $${analysisResult.maxRiskPerContract}
+MAX GAIN: $${analysisResult.maxGainPerContract}
+OVERALL SCORE: ${analysisResult.overallScore}/100
+VERDICT: ${analysisResult.plainEnglishVerdict}
+
+What if I pick a different strike price? How would that change the R/R?`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.75rem',
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  🎯 Try Different Strike?
+                </a>
+                
+                <a 
+                  href={`https://claude.ai?prompt=${encodeURIComponent(`I'm analyzing an options trade and need your help. Here's my trade:
+
+TICKER: ${analysisResult.ticker}
+STRIKE: $${analysisResult.strikePrice.toFixed(2)}
+CURRENT PRICE: $${analysisResult.lastClose.toFixed(2)}
+OPTION PRICE: $${analysisResult.optionPrice}
+DAYS TO EXPIRY: ${analysisResult.daysToExpiry}
+RSI: ${analysisResult.rsiScore}
+RISK/REWARD: 1:${analysisResult.riskRewardRatio}
+MAX RISK: $${analysisResult.maxRiskPerContract}
+MAX GAIN: $${analysisResult.maxGainPerContract}
+OVERALL SCORE: ${analysisResult.overallScore}/100
+VERDICT: ${analysisResult.plainEnglishVerdict}
+
+How do I manage this trade if it goes against me? What's my exit strategy?`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.75rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  🛑 Exit Strategy Help?
+                </a>
+              </div>
+
+              <p style={{ margin: '1rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>Click any button to open Claude with your trade data pre-filled. Then type your specific question.</p>
             </div>
 
             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
