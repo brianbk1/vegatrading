@@ -14,50 +14,50 @@ export default function DayTradingApp() {
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionType, setOptionType] = useState('call'); // 'call' or 'put'
 
-  // Fetch current price from Polygon when ticker changes
-  const handleTickerChange = async (newTicker) => {
-    const upperTicker = newTicker.toUpperCase();
-    console.log(`📍 INPUT: newTicker="${newTicker}" -> upperTicker="${upperTicker}"`);
-    setTicker(upperTicker);
+  // Just update ticker on input, don't fetch
+  const handleTickerInput = (newTicker) => {
+    setTicker(newTicker.toUpperCase());
+    console.log(`📝 TYPED: ${newTicker.toUpperCase()}`);
+  };
+
+  // Manually fetch price when button clicked
+  const handleCheckPrice = async () => {
+    const upperTicker = ticker.toUpperCase();
+    console.log(`🔍 CHECK PRICE clicked for: "${upperTicker}"`);
     
-    // Don't fetch if ticker is empty or too short
     if (!upperTicker || upperTicker.length === 0) {
-      console.log(`📍 SKIPPING: ticker is empty`);
-      setCurrentPrice(null);
+      setError('Please enter a ticker first');
       return;
     }
     
-    // Prevent multiple simultaneous fetches
-    if (tickerFetchInProgress) {
-      console.log(`📍 SKIPPING: fetch already in progress for another ticker`);
-      return;
-    }
-    
-    // Fetch fresh price
     setTickerFetchInProgress(true);
-    console.log(`📍 FETCHING price for ticker: "${upperTicker}"`);
+    setError('');
+    console.log(`🔍 FETCHING price for ticker: "${upperTicker}"`);
     try {
       const payload = { ticker: upperTicker, getPrice: true };
-      console.log(`📍 SENDING payload:`, JSON.stringify(payload));
+      console.log(`🔍 SENDING payload:`, JSON.stringify(payload));
       const res = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      console.log(`📍 RECEIVED response for ticker "${data.ticker}": price=$${data.price}`);
+      console.log(`🔍 RECEIVED response for ticker "${data.ticker}": price=$${data.price}`);
       
-      // Only set if response matches the current ticker we're trying to fetch
+      // Only set if response matches the current ticker
       if (data.ticker === upperTicker && data.price && data.price > 1) {
-        console.log(`📍 SETTING currentPrice to: $${data.price} (matches ticker ${upperTicker})`);
+        console.log(`🔍 SETTING currentPrice to: $${data.price}`);
         setCurrentPrice(data.price);
       } else if (data.ticker !== upperTicker) {
-        console.log(`📍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
+        console.log(`🔍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
+        setError(`Price fetch returned wrong ticker: ${data.ticker}`);
       } else {
-        console.log(`📍 INVALID price in response:`, data.price);
+        console.log(`🔍 INVALID price in response:`, data.price);
+        setError('Invalid price received');
       }
     } catch (err) {
-      console.log('📍 FETCH FAILED:', err.message);
+      console.log('🔍 FETCH FAILED:', err.message);
+      setError(`Price fetch failed: ${err.message}`);
     } finally {
       setTickerFetchInProgress(false);
     }
@@ -279,15 +279,9 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+                <input type="text" value={ticker} onChange={(e) => handleTickerInput(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
                 <button
-                  onClick={() => {
-                    if (ticker) {
-                      handleTickerChange(ticker);
-                    } else {
-                      setError('Please enter a ticker first');
-                    }
-                  }}
+                  onClick={handleCheckPrice}
                   disabled={tickerFetchInProgress}
                   style={{
                     padding: '0.75rem 1.5rem',
