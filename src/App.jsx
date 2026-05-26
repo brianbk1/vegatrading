@@ -93,12 +93,36 @@ export default function DayTradingApp() {
       const strikeNum = parseFloat(strikePrice);
       const currentPriceNum = currentPrice;
       const daysNum = parseInt(daysToExpiry);
-      const volatility = ivPercentile / 100;
-      const optionPriceNum = parseFloat(optionPrice);
-      const delta = Math.min(0.95, Math.max(0.05, 0.5 + (currentPriceNum - strikeNum) / strikeNum * 0.5));
-      const gamma = Math.exp(-Math.pow((currentPriceNum - strikeNum) / strikeNum, 2) / 2) / (strikeNum * volatility * Math.sqrt(Math.max(1, daysNum / 365)));
-      const theta = -(optionPriceNum / (daysNum || 1)) * 0.1;
-      const vega = (strikeNum * gamma * Math.sqrt(Math.max(1, daysNum / 365))) / 100;
+      // Black-Scholes Greeks calculation (real formulas)
+      const r = 0.05; // Risk-free rate
+      const T = Math.max(daysNum / 365, 0.001); // Time to expiration in years
+      const sigma = Math.sqrt(ivPercentile / 100) || 0.25; // Volatility
+      
+      // d1 and d2 for Black-Scholes
+      const d1 = (Math.log(currentPriceNum / strikeNum) + (r + (sigma * sigma) / 2) * T) / (sigma * Math.sqrt(T));
+      const d2 = d1 - sigma * Math.sqrt(T);
+      
+      // Normal distribution functions
+      const N = (x) => 0.5 * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * Math.pow(x, 3))));
+      const n = (x) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+      
+      // Calculate Greeks based on option type
+      let delta, gamma, theta, vega;
+      
+      if (optionType === 'call') {
+        delta = N(d1);
+        gamma = n(d1) / (currentPriceNum * sigma * Math.sqrt(T));
+        vega = currentPriceNum * n(d1) * Math.sqrt(T) / 100;
+        theta = -(currentPriceNum * n(d1) * sigma) / (2 * Math.sqrt(T)) - r * strikeNum * Math.exp(-r * T) * N(d2);
+      } else {
+        delta = N(d1) - 1;
+        gamma = n(d1) / (currentPriceNum * sigma * Math.sqrt(T));
+        vega = currentPriceNum * n(d1) * Math.sqrt(T) / 100;
+        theta = -(currentPriceNum * n(d1) * sigma) / (2 * Math.sqrt(T)) + r * strikeNum * Math.exp(-r * T) * N(-d2);
+      }
+      
+      theta = theta / 365; // Convert to daily decay
+      console.log(`[Greeks] Delta: ${delta.toFixed(3)}, Theta: ${theta.toFixed(4)}, Vega: ${vega.toFixed(3)}, Gamma: ${gamma.toFixed(4)}`);
       const maxRiskPerContract = optionPriceNum;
       // For day traders: premium increases with stock movement
       // Using delta to estimate premium change: if stock moves $1, premium changes ~delta dollars
@@ -522,7 +546,7 @@ export default function DayTradingApp() {
 
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ The Greeks (Advanced)</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Delta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.delta}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Move $1 = +${(parseFloat(analysisResult.delta) * 100).toFixed(0)}</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Delta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{delta.toFixed(2)}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>$1 move = ${(delta).toFixed(2)} gain</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Gamma</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.gamma}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Delta acceleration</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Theta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.theta}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Daily decay</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Vega</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>{analysisResult.vega}</div><div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>IV sensitivity</div></div>
