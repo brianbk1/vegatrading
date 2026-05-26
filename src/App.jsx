@@ -20,37 +20,46 @@ export default function DayTradingApp() {
     console.log(`📍 INPUT: newTicker="${newTicker}" -> upperTicker="${upperTicker}"`);
     setTicker(upperTicker);
     
+    // Don't fetch if ticker is empty or too short
+    if (!upperTicker || upperTicker.length === 0) {
+      console.log(`📍 SKIPPING: ticker is empty`);
+      setCurrentPrice(null);
+      return;
+    }
+    
     // Prevent multiple simultaneous fetches
     if (tickerFetchInProgress) {
       console.log(`📍 SKIPPING: fetch already in progress for another ticker`);
       return;
     }
     
-    // Always fetch fresh price - no caching
-    if (upperTicker.length >= 1) {
-      setTickerFetchInProgress(true);
-      console.log(`📍 FETCHING price for ticker: "${upperTicker}"`);
-      try {
-        const payload = { ticker: upperTicker, getPrice: true };
-        console.log(`📍 SENDING payload:`, JSON.stringify(payload));
-        const res = await fetch('/api/fetch-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        console.log(`📍 RECEIVED response for ticker "${data.ticker}":`, data);
-        if (data.price && data.price > 1) {
-          console.log(`📍 SETTING currentPrice to: $${data.price} (from ticker ${data.ticker})`);
-          setCurrentPrice(data.price);
-        } else {
-          console.log(`📍 INVALID price in response:`, data.price);
-        }
-      } catch (err) {
-        console.log('📍 FETCH FAILED:', err.message);
-      } finally {
-        setTickerFetchInProgress(false);
+    // Fetch fresh price
+    setTickerFetchInProgress(true);
+    console.log(`📍 FETCHING price for ticker: "${upperTicker}"`);
+    try {
+      const payload = { ticker: upperTicker, getPrice: true };
+      console.log(`📍 SENDING payload:`, JSON.stringify(payload));
+      const res = await fetch('/api/fetch-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      console.log(`📍 RECEIVED response for ticker "${data.ticker}": price=$${data.price}`);
+      
+      // Only set if response matches the current ticker we're trying to fetch
+      if (data.ticker === upperTicker && data.price && data.price > 1) {
+        console.log(`📍 SETTING currentPrice to: $${data.price} (matches ticker ${upperTicker})`);
+        setCurrentPrice(data.price);
+      } else if (data.ticker !== upperTicker) {
+        console.log(`📍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
+      } else {
+        console.log(`📍 INVALID price in response:`, data.price);
       }
+    } catch (err) {
+      console.log('📍 FETCH FAILED:', err.message);
+    } finally {
+      setTickerFetchInProgress(false);
     }
   };
 
@@ -269,9 +278,34 @@ export default function DayTradingApp() {
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
-              <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+                <button
+                  onClick={() => {
+                    if (ticker) {
+                      handleTickerChange(ticker);
+                    } else {
+                      setError('Please enter a ticker first');
+                    }
+                  }}
+                  disabled={tickerFetchInProgress}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#00c8c8',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 600,
+                    cursor: tickerFetchInProgress ? 'not-allowed' : 'pointer',
+                    opacity: tickerFetchInProgress ? 0.6 : 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {tickerFetchInProgress ? '⏳ Checking...' : '💵 Check Price'}
+                </button>
+              </div>
               {currentPrice && currentPrice > 1 && (
-                <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.25rem', fontWeight: 600 }}>
+                <div style={{ fontSize: '0.85rem', color: '#047857', marginTop: '0.5rem', fontWeight: 600, background: '#ecfdf5', padding: '0.75rem', borderRadius: '6px', border: '1px solid #86efac' }}>
                   💵 Current Price: ${currentPrice.toFixed(2)}
                 </div>
               )}
@@ -400,7 +434,7 @@ export default function DayTradingApp() {
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Type</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.optionType === 'call' ? '#10b981' : '#ef4444' }}>{analysisResult.optionType === 'call' ? '📈 CALL' : '📉 PUT'}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ticker</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{analysisResult.ticker}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Strike</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.strikePrice.toFixed(2)}</div></div>
-              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>💵 Current Price</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857' }}>${analysisResult.lastClose.toFixed(2)}</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>💵 Price at Analysis</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#047857' }}>${analysisResult.lastClose.toFixed(2)}</div></div>
             </div>
 
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📊 Technical Indicators</h3>
