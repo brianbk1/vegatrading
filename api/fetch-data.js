@@ -14,71 +14,81 @@ export default async function handler(req, res) {
   try {
     // ========== GET PRICE FROM POLYGON ==========
     if (getPrice && ticker) {
-      console.log(`[Polygon] 🔍 Fetching current price for TICKER: ${ticker}`);
+      console.log(`[Claude] 🔍 Fetching current price for TICKER: ${ticker}`);
       let currentPrice = 100;
       let lastClose = 100;
       
+      // Get current price from Claude
       try {
-        // Try last quote (real-time/current price)
-        const priceRes = await fetch(
-          `https://api.polygon.io/v3/quotes/latest?symbols=${ticker}&apikey=${polygonKey}`
-        );
-        if (priceRes.ok) {
-          const priceData = await priceRes.json();
-          if (priceData.results && priceData.results[0]) {
-            currentPrice = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
-            console.log(`[Polygon] 🔍 Got current price for ${ticker}: $${currentPrice}`);
-          }
+        console.log(`[Claude] 🔍 Calling Claude API for current price...`);
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': anthropicKey,
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-20250805',
+            max_tokens: 100,
+            messages: [
+              {
+                role: 'user',
+                content: `What is the current stock price of ${ticker} right now? Reply with ONLY the number, nothing else. Example: 729.50`
+              }
+            ],
+          }),
+        });
+        
+        if (claudeRes.ok) {
+          const claudeData = await claudeRes.json();
+          const priceText = claudeData.content[0]?.text?.trim() || '';
+          currentPrice = parseFloat(priceText) || 100;
+          console.log(`[Claude] 🔍 Got current price for ${ticker}: $${currentPrice}`);
+        } else {
+          console.log(`[Claude] 🔍 API error: ${claudeRes.status}`);
         }
       } catch (err) {
-        console.log('[Polygon] 🔍 Current price fetch failed:', err.message);
+        console.log('[Claude] 🔍 Current price fetch failed:', err.message);
       }
       
-      // Get last close (previous trading day close)
+      // Get last close from Polygon
       try {
-        if (currentPrice === 100) {
-          // If current didn't work, try previous close dates
-          console.log('[Polygon] 🔍 Current price returned $100, trying previous dates');
-          for (let daysBack = 0; daysBack <= 7; daysBack++) {
-            const date = new Date();
-            date.setDate(date.getDate() - daysBack);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            const res2 = await fetch(
-              `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
-            );
-            if (res2.ok) {
-              const data = await res2.json();
-              if (data.close && data.close !== 100) {
-                lastClose = data.close;
-                currentPrice = data.close;
-                console.log(`[Polygon] 🔍 Got close for ${ticker} on ${dateStr}: $${lastClose}`);
-                break;
-              }
-            }
+        console.log('[Claude] 🔍 Fetching last close from Polygon');
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        const res2 = await fetch(
+          `https://api.polygon.io/v1/open-close/${ticker}/${yesterdayStr}?apikey=${polygonKey}`
+        );
+        if (res2.ok) {
+          const data = await res2.json();
+          if (data.close && data.close > 0) {
+            lastClose = data.close;
+            console.log(`[Claude] 🔍 Got last close for ${ticker} on ${yesterdayStr}: $${lastClose}`);
           }
         } else {
-          // If we got current price, also get yesterday's close
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          const res2 = await fetch(
-            `https://api.polygon.io/v1/open-close/${ticker}/${yesterdayStr}?apikey=${polygonKey}`
+          // Try day before if yesterday doesn't work
+          const dayBefore = new Date();
+          dayBefore.setDate(dayBefore.getDate() - 2);
+          const dayBeforeStr = dayBefore.toISOString().split('T')[0];
+          const res3 = await fetch(
+            `https://api.polygon.io/v1/open-close/${ticker}/${dayBeforeStr}?apikey=${polygonKey}`
           );
-          if (res2.ok) {
-            const data = await res2.json();
+          if (res3.ok) {
+            const data = await res3.json();
             if (data.close && data.close > 0) {
               lastClose = data.close;
-              console.log(`[Polygon] 🔍 Got last close for ${ticker} on ${yesterdayStr}: $${lastClose}`);
+              console.log(`[Claude] 🔍 Got last close for ${ticker} on ${dayBeforeStr}: $${lastClose}`);
             }
           }
         }
       } catch (err) {
-        console.log('[Polygon] 🔍 Last close fetch failed:', err.message);
+        console.log('[Claude] 🔍 Last close fetch failed:', err.message);
         lastClose = currentPrice; // Fallback to current if close unavailable
       }
       
-      console.log(`[Polygon] 🔍 Returning for ${ticker}: current=$${currentPrice}, lastClose=$${lastClose}`);
+      console.log(`[Claude] 🔍 Returning for ${ticker}: current=$${currentPrice}, lastClose=$${lastClose}`);
       return res.status(200).json({ currentPrice, lastClose, ticker });
     }
 
