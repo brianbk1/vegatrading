@@ -178,15 +178,32 @@ export default async function handler(req, res) {
 
     let lastClose = 100;
     try {
+      // Use today's date
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
       const priceRes = await fetch(
-        `https://api.polygon.io/v1/open-close/${ticker}/2026-05-26?apikey=${polygonKey}`
+        `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
       );
       if (priceRes.ok) {
         const priceData = await priceRes.json();
         lastClose = priceData.close || 100;
+        console.log(`[Polygon] Got price for ${dateStr}: $${lastClose}`);
+      } else {
+        // Try yesterday if today's data isn't available
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const res2 = await fetch(
+          `https://api.polygon.io/v1/open-close/${ticker}/${yesterdayStr}?apikey=${polygonKey}`
+        );
+        if (res2.ok) {
+          const data = await res2.json();
+          lastClose = data.close || 100;
+          console.log(`[Polygon] Got price for ${yesterdayStr}: $${lastClose}`);
+        }
       }
     } catch (err) {
-      console.log('[Polygon] Price fetch failed');
+      console.log('[Polygon] Price fetch failed:', err.message);
     }
 
     let data = {
