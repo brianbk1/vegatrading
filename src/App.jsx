@@ -253,6 +253,41 @@ export default function DayTradingApp() {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, margin: 0 }}>Account Size ($)</label>
+                <span 
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '18px',
+                    height: '18px',
+                    background: '#3b82f6',
+                    color: 'white',
+                    borderRadius: '50%',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: 'help',
+                    flexShrink: 0
+                  }}
+                  title="Used to calculate position size using the 2% Risk Rule: Max Risk = Account Size × 2%. This ensures you never risk more than 2% of your account on a single trade. Example: $50,000 account = max $1,000 risk per trade."
+                >
+                  ?
+                </span>
+              </div>
+              <input
+                type="number"
+                value={accountSize}
+                onChange={(e) => setAccountSize(parseFloat(e.target.value) || 50000)}
+                min="1000"
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
+              />
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                💡 Max Risk = Account Size × 2% → Contracts to Trade = Max Risk ÷ Premium
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Account Size ($)</label>
               <input
                 type="number"
