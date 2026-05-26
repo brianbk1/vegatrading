@@ -130,6 +130,33 @@ export default function DayTradingApp() {
         thesisStatement += 'Poor R/R. Wait for better setup.';
       }
 
+      // Plain English explanation for novices
+      let plainEnglishVerdict = '';
+      if (riskRewardRatio >= 2) {
+        plainEnglishVerdict = `This is a GOOD trade setup. You could make $${maxGainPerContract} for every $${maxRiskPerContract} you risk—that's a 2:1 payoff. `;
+        if (rsiScore > 70 || rsiScore < 30) {
+          plainEnglishVerdict += `The technicals also look strong (RSI is extreme), so this could be a nice win if the stock moves as expected. Just watch your break-even point.`;
+        } else {
+          plainEnglishVerdict += `The technicals are neutral, so make sure your catalyst is solid.`;
+        }
+      } else if (riskRewardRatio >= 1) {
+        plainEnglishVerdict = `This is a FAIR trade setup. You risk $${maxRiskPerContract} to make $${maxGainPerContract}—basically breakeven odds. Only take this if you have a really strong reason to believe the stock will move your way. `;
+        if (rsiScore > 70 || rsiScore < 30) {
+          plainEnglishVerdict += `The RSI is extreme, which helps your case.`;
+        } else {
+          plainEnglishVerdict += `The technicals don't strongly support you, so be extra careful.`;
+        }
+      } else {
+        plainEnglishVerdict = `This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. `;
+        if (riskRewardRatio > 0.5) {
+          plainEnglishVerdict += `Unless you have a very specific catalyst (earnings, major news), skip this and wait for a better opportunity.`;
+        } else {
+          plainEnglishVerdict += `This is a bad trade. Avoid it and find a better strike or option price.`;
+        }
+      }
+      plainEnglishVerdict += ` You have ${daysNum} day(s) before expiration, so time is `;
+      plainEnglishVerdict += daysNum <= 1 ? `running out FAST—expect rapid price decay.` : daysNum <= 7 ? `limited—decay is accelerating.` : `on your side—you have breathing room.`;
+
       const ivCrushImpact = [
         { ivChange: -20, label: 'Moderate (-20%)', newPrice: (optionPriceNum + (vega * -20)).toFixed(2), loss: (Math.max(0, optionPriceNum - (optionPriceNum + (vega * -20)))).toFixed(2) },
         { ivChange: -40, label: 'Significant (-40%)', newPrice: (optionPriceNum + (vega * -40)).toFixed(2), loss: (Math.max(0, optionPriceNum - (optionPriceNum + (vega * -40)))).toFixed(2) },
@@ -148,7 +175,7 @@ export default function DayTradingApp() {
         delta: delta.toFixed(2), gamma: gamma.toFixed(4), theta: theta.toFixed(4), vega: vega.toFixed(3),
         maxRiskPerContract: maxRiskPerContract.toFixed(2), maxGainPerContract: maxGainPerContract.toFixed(2), riskRewardRatio,
         breakEvenPrice: breakEvenPrice.toFixed(2), priceMove: priceMove.toFixed(2), priceMovePercent, contractsToTrade,
-        totalMaxRisk: totalMaxRisk.toFixed(2), totalMaxGain: totalMaxGain.toFixed(2), thesisStatement, userThesis, thesisAnalysis, ivCrushImpact,
+        totalMaxRisk: totalMaxRisk.toFixed(2), totalMaxGain: totalMaxGain.toFixed(2), thesisStatement, plainEnglishVerdict, userThesis, thesisAnalysis, ivCrushImpact,
         technicalSummary, riskRewardSummary, dteSummary, contractsSummary, ivCrushSummary,
         weeklyEvents: `📅 ECONOMIC CALENDAR:\n🔴 CPI - Wednesday 8:30 AM\n🟠 Jobless Claims - Thursday 8:30 AM\n🟠 Retail Sales - Friday 8:30 AM\n\n💼 EARNINGS:\n📊 NVDA - Aug 26 (After Hours)\n📊 MSFT - Jul 29 (After Hours)\n📊 TSLA - Jul 21 (After Hours)\n📊 META - Jul 30 (After Hours)\n📊 AAPL - Aug 1 (After Hours)\n📊 GOOGL - Jul 29 (After Hours)`
       });
@@ -341,7 +368,12 @@ export default function DayTradingApp() {
 
             <div style={{ background: analysisResult.overallScore > 75 ? '#ecfdf5' : analysisResult.overallScore > 60 ? '#fffbeb' : '#fef2f2', border: `2px solid ${analysisResult.overallScore > 75 ? '#10b981' : analysisResult.overallScore > 60 ? '#f59e0b' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#065f46' : analysisResult.overallScore > 60 ? '#92400e' : '#7f1d1d' }}>💡 Overall Trade Verdict</h3>
-              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>{analysisResult.thesisStatement}</p>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', lineHeight: '1.7', fontWeight: 600, color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>{analysisResult.thesisStatement}</p>
+              <div style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid', borderColor: analysisResult.overallScore > 75 ? '#86efac' : analysisResult.overallScore > 60 ? '#fcd34d' : '#fca5a5', borderRadius: '6px', padding: '1rem', marginTop: '1rem' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.7', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>
+                  <strong>In Plain English:</strong> {analysisResult.plainEnglishVerdict}
+                </p>
+              </div>
             </div>
 
             <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
