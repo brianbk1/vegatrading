@@ -32,10 +32,10 @@ export default function DayTradingApp() {
       setOptionsChain(data.optionsChain || []);
       setShowChain(true);
       if (!data.optionsChain || data.optionsChain.length === 0) {
-        setError('Polygon options data not available for this ticker/date. Use manual entry with your broker\'s bid/ask prices.');
+        setError('No options data found for this date. Try a different expiration or use manual entry.');
       }
     } catch (err) {
-      setError('Failed to fetch options chain. Please enter manually.');
+      setError('Failed to fetch options chain. Use manual entry instead.');
     } finally {
       setIsFetchingChain(false);
     }
@@ -181,7 +181,6 @@ export default function DayTradingApp() {
               </p>
             </div>
 
-            {/* ENTRY MODE TOGGLE */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
               <button
                 onClick={() => { setEntryMode('manual'); setShowChain(false); }}
@@ -215,13 +214,11 @@ export default function DayTradingApp() {
               </button>
             </div>
 
-            {/* SHARED: TICKER */}
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
             </div>
 
-            {/* MANUAL ENTRY MODE */}
             {entryMode === 'manual' && (
               <>
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -239,7 +236,6 @@ export default function DayTradingApp() {
                     value={expiryDate} 
                     onChange={(e) => {
                       setExpiryDate(e.target.value);
-                      // Calculate days to expiry
                       const today = new Date();
                       const expiry = new Date(e.target.value);
                       const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
@@ -252,12 +248,23 @@ export default function DayTradingApp() {
               </>
             )}
 
-            {/* FETCH MODE */}
             {entryMode === 'fetch' && (
               <>
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Expiration Date</label>
-                  <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+                  <input 
+                    type="date" 
+                    value={expiryDate} 
+                    onChange={(e) => {
+                      setExpiryDate(e.target.value);
+                      const today = new Date();
+                      const expiry = new Date(e.target.value);
+                      const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                      setDaysToExpiry(Math.max(1, daysLeft).toString());
+                    }}
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
+                  />
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Days: {daysToExpiry}</div>
                 </div>
                 <button
                   onClick={handleFetchChain}
@@ -308,8 +315,6 @@ export default function DayTradingApp() {
               </>
             )}
 
-            {/* SHARED: REMAINING FIELDS */}
-
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <label style={{ display: 'block', fontWeight: 600, margin: 0 }}>Account Size ($)</label>
@@ -339,7 +344,7 @@ export default function DayTradingApp() {
             <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginTop: '2rem', fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>📚 How to Use</h3>
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Manual:</strong> Enter strike & option price from your broker directly.</p>
-              <p style={{ margin: '0 0 0.75rem 0' }}><strong>Fetch:</strong> Select expiry date to pull live bid/ask prices. Click a strike to auto-fill.</p>
+              <p style={{ margin: '0 0 0.75rem 0' }}><strong>Fetch:</strong> Select expiry date to pull live options. Click a strike to auto-fill.</p>
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Score:</strong> Above 75 = institutional-grade, 60-74 = tradeable, below 60 = caution.</p>
               <p style={{ margin: 0 }}><strong>Verify:</strong> Always cross-check data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.</p>
             </div>
