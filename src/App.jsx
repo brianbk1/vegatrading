@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
+  const [currentPrice, setCurrentPrice] = useState(null);
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
   const [accountSize, setAccountSize] = useState(50000);
@@ -11,6 +12,26 @@ export default function DayTradingApp() {
   const [expiryDate, setExpiryDate] = useState('');
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionType, setOptionType] = useState('call'); // 'call' or 'put'
+
+  // Fetch current price when ticker changes
+  const handleTickerChange = async (newTicker) => {
+    setTicker(newTicker.toUpperCase());
+    if (newTicker.length >= 1) {
+      try {
+        const res = await fetch('/api/fetch-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticker: newTicker.toUpperCase(), getPriceOnly: true }),
+        });
+        const data = await res.json();
+        if (data.lastClose) {
+          setCurrentPrice(data.lastClose);
+        }
+      } catch (err) {
+        console.log('Price fetch failed');
+      }
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!strikePrice || !optionPrice) {
@@ -219,7 +240,12 @@ export default function DayTradingApp() {
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
-              <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              {currentPrice && (
+                <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.25rem', fontWeight: 600 }}>
+                  💵 Current Price: ${currentPrice.toFixed(2)}
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -258,6 +284,17 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Strike Price ($)</label>
               <input type="number" value={strikePrice} onChange={(e) => setStrikePrice(e.target.value)} placeholder="e.g., 545.50" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              {strikePrice && currentPrice && (
+                <div style={{ fontSize: '0.75rem', marginTop: '0.5rem', padding: '0.5rem', borderRadius: '4px', backgroundColor: optionType === 'call' && parseFloat(strikePrice) > currentPrice ? '#fef3c7' : optionType === 'put' && parseFloat(strikePrice) < currentPrice ? '#fef3c7' : '#ecfdf5' }}>
+                  {optionType === 'call' && parseFloat(strikePrice) > currentPrice ? (
+                    <span style={{ color: '#92400e' }}>⚠️ For a CALL: Strike should be BELOW current price (${currentPrice.toFixed(2)}) for profit potential</span>
+                  ) : optionType === 'put' && parseFloat(strikePrice) < currentPrice ? (
+                    <span style={{ color: '#92400e' }}>⚠️ For a PUT: Strike should be ABOVE current price (${currentPrice.toFixed(2)}) for profit potential</span>
+                  ) : (
+                    <span style={{ color: '#047857' }}>✅ Good strike selection for this option type</span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
