@@ -36,6 +36,7 @@ export default async function handler(req, res) {
 
         if (chainRes.ok) {
           const chainData = await chainRes.json();
+          console.log(`[Polygon] Chain response status: ${chainRes.status}`, chainData);
           if (chainData.results && chainData.results.length > 0) {
             optionsChain = chainData.results
               .map(opt => ({
@@ -50,7 +51,12 @@ export default async function handler(req, res) {
               .filter(opt => opt.strike > 0 && (opt.bid > 0 || opt.ask > 0))
               .sort((a, b) => a.strike - b.strike);
             console.log(`[Polygon] ✅ Got ${optionsChain.length} strikes`);
+          } else {
+            console.log(`[Polygon] No results in response - may not have options data for ${ticker} on ${expiryDate}`);
           }
+        } else {
+          const errText = await chainRes.text();
+          console.log(`[Polygon] Status ${chainRes.status}: ${errText.substring(0, 200)}`);
         }
       } catch (err) {
         console.log('[Polygon] Chain fetch error:', err.message);
@@ -61,6 +67,7 @@ export default async function handler(req, res) {
         currentPrice,
         ticker,
         expiryDate,
+        message: optionsChain.length === 0 ? 'Polygon options data not available. Use manual entry with your broker\'s prices.' : undefined,
         dataSource: optionsChain.length > 0 ? 'polygon' : 'fallback'
       });
     }

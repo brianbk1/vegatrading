@@ -32,7 +32,7 @@ export default function DayTradingApp() {
       setOptionsChain(data.optionsChain || []);
       setShowChain(true);
       if (!data.optionsChain || data.optionsChain.length === 0) {
-        setError('No options data found. Please enter manually.');
+        setError('Polygon options data not available for this ticker/date. Use manual entry with your broker\'s bid/ask prices.');
       }
     } catch (err) {
       setError('Failed to fetch options chain. Please enter manually.');
@@ -177,7 +177,7 @@ export default function DayTradingApp() {
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e', fontWeight: 600 }}>
-                ⚠️ DISCLAIMER: Educational purposes only. Not financial advice. Never risk more than you can afford to lose.
+                ⚠️ INFORMATION: This tool provides analytical information about options trades. It is not financial advice, and you are solely responsible for your trading decisions. Always verify data with your broker before executing any trades.
               </p>
             </div>
 
@@ -231,6 +231,23 @@ export default function DayTradingApp() {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Option Price ($)</label>
                   <input type="number" value={optionPrice} onChange={(e) => setOptionPrice(e.target.value)} step="0.01" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Expiration Date</label>
+                  <input 
+                    type="date" 
+                    value={expiryDate} 
+                    onChange={(e) => {
+                      setExpiryDate(e.target.value);
+                      // Calculate days to expiry
+                      const today = new Date();
+                      const expiry = new Date(e.target.value);
+                      const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                      setDaysToExpiry(Math.max(1, daysLeft).toString());
+                    }}
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
+                  />
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Days to expiry: {daysToExpiry}</div>
                 </div>
               </>
             )}
@@ -292,10 +309,6 @@ export default function DayTradingApp() {
             )}
 
             {/* SHARED: REMAINING FIELDS */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Days to Expiry</label>
-              <input type="number" value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)} min="1" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
-            </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -418,7 +431,7 @@ export default function DayTradingApp() {
             </div>
 
             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>⚠️ Educational analysis only. Always verify data on your broker before trading.</p>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>⚠️ Information provided for analysis only. Verify all data with your broker before trading.</p>
             </div>
           </div>
         )}
