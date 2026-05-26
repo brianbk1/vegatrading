@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPrice, optionType } = req.body;
+  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPrice, optionType, currentPrice } = req.body;
   const polygonKey = process.env.POLYGON_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
@@ -187,43 +187,49 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Strike price and option price required' });
     }
 
-    let lastClose = 100;
-    try {
-      // Try last quote (real-time)
-      const priceRes = await fetch(
-        `https://api.polygon.io/v3/quotes/latest?symbols=${ticker}&apikey=${polygonKey}`
-      );
-      if (priceRes.ok) {
-        const priceData = await priceRes.json();
-        if (priceData.results && priceData.results[0]) {
-          lastClose = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
-          console.log(`[Polygon] Got last price for ${ticker}: $${lastClose}`);
+    let lastClose = currentPrice || 100;
+    
+    // Only fetch if currentPrice wasn't provided
+    if (!currentPrice) {
+      try {
+        // Try last quote (real-time)
+        const priceRes = await fetch(
+          `https://api.polygon.io/v3/quotes/latest?symbols=${ticker}&apikey=${polygonKey}`
+        );
+        if (priceRes.ok) {
+          const priceData = await priceRes.json();
+          if (priceData.results && priceData.results[0]) {
+            lastClose = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
+            console.log(`[Polygon] Got last price for ${ticker}: $${lastClose}`);
+          }
         }
-      }
-      
-      // If last quote didn't work, try previous close dates
-      if (lastClose === 100) {
-        console.log('[Polygon] Last quote returned $100, trying previous dates');
-        for (let daysBack = 0; daysBack <= 7; daysBack++) {
-          const date = new Date();
-          date.setDate(date.getDate() - daysBack);
-          const dateStr = date.toISOString().split('T')[0];
-          
-          const res2 = await fetch(
-            `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
-          );
-          if (res2.ok) {
-            const data = await res2.json();
-            if (data.close && data.close !== 100) {
-              lastClose = data.close;
-              console.log(`[Polygon] Got close for ${dateStr}: $${lastClose}`);
-              break;
+        
+        // If last quote didn't work, try previous close dates
+        if (lastClose === 100) {
+          console.log('[Polygon] Last quote returned $100, trying previous dates');
+          for (let daysBack = 0; daysBack <= 7; daysBack++) {
+            const date = new Date();
+            date.setDate(date.getDate() - daysBack);
+            const dateStr = date.toISOString().split('T')[0];
+            
+            const res2 = await fetch(
+              `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
+            );
+            if (res2.ok) {
+              const data = await res2.json();
+              if (data.close && data.close !== 100) {
+                lastClose = data.close;
+                console.log(`[Polygon] Got close for ${dateStr}: $${lastClose}`);
+                break;
+              }
             }
           }
         }
+      } catch (err) {
+        console.log('[Polygon] Price fetch failed:', err.message);
       }
-    } catch (err) {
-      console.log('[Polygon] Price fetch failed:', err.message);
+    } else {
+      console.log(`[Backend] Using currentPrice from frontend: $${currentPrice}`);
     }
 
     let data = {

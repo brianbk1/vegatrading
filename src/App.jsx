@@ -63,7 +63,7 @@ export default function DayTradingApp() {
       const dataResponse = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker, strikePrice, daysToExpiry, optionPrice, optionType }),
+        body: JSON.stringify({ ticker, strikePrice, daysToExpiry, optionPrice, optionType, currentPrice }),
       });
       if (!dataResponse.ok) throw new Error('API error');
       const realData = await dataResponse.json();
