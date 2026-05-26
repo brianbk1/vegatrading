@@ -13,7 +13,7 @@ export default function DayTradingApp() {
   const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionType, setOptionType] = useState('call'); // 'call' or 'put'
 
-  // Fetch current price when ticker changes
+  // Fetch current price from Claude when ticker changes
   const handleTickerChange = async (newTicker) => {
     setTicker(newTicker.toUpperCase());
     if (newTicker.length >= 1) {
@@ -21,11 +21,11 @@ export default function DayTradingApp() {
         const res = await fetch('/api/fetch-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticker: newTicker.toUpperCase(), getPriceOnly: true }),
+          body: JSON.stringify({ ticker: newTicker.toUpperCase(), getPrice: true }),
         });
         const data = await res.json();
-        if (data.lastClose) {
-          setCurrentPrice(data.lastClose);
+        if (data.price) {
+          setCurrentPrice(data.price);
         }
       } catch (err) {
         console.log('Price fetch failed');
@@ -36,6 +36,10 @@ export default function DayTradingApp() {
   const handleAnalyze = async () => {
     if (!strikePrice || !optionPrice) {
       setError('Please enter Strike Price and Option Price');
+      return;
+    }
+    if (!currentPrice) {
+      setError('Please enter Current Price');
       return;
     }
     setIsAnalyzing(true);
@@ -52,7 +56,7 @@ export default function DayTradingApp() {
       const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
       const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));
       const strikeNum = parseFloat(strikePrice);
-      const currentPriceNum = parseFloat(realData.lastClose);
+      const currentPriceNum = currentPrice;
       const daysNum = parseInt(daysToExpiry);
       const volatility = ivPercentile / 100;
       const optionPriceNum = parseFloat(optionPrice);

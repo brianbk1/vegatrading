@@ -3,56 +3,48 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPriceOnly } = req.body;
+  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPrice, optionType } = req.body;
   const polygonKey = process.env.POLYGON_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
   if (!polygonKey) {
     return res.status(500).json({ error: 'Missing POLYGON_API_KEY' });
   }
 
   try {
-    // ========== GET PRICE ONLY ==========
-    if (getPriceOnly && ticker) {
-      console.log(`[Polygon] Fetching price for ${ticker}`);
-      let lastClose = 100;
+    // ========== GET PRICE FROM CLAUDE ==========
+    if (getPrice && ticker) {
+      console.log(`[Claude] Fetching current price for ${ticker}`);
+      let price = 100;
       try {
-        // Try last quote endpoint (real-time)
-        const priceRes = await fetch(
-          `https://api.polygon.io/v3/quotes/latest?symbols=${ticker}&apikey=${polygonKey}`
-        );
-        if (priceRes.ok) {
-          const priceData = await priceRes.json();
-          if (priceData.results && priceData.results[0]) {
-            lastClose = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
-            console.log(`[Polygon] Got last price for ${ticker}: $${lastClose}`);
-          }
-        }
-        
-        // If last quote didn't work, try previous close dates
-        if (lastClose === 100) {
-          console.log('[Polygon] Last quote returned $100, trying previous dates');
-          for (let daysBack = 0; daysBack <= 7; daysBack++) {
-            const date = new Date();
-            date.setDate(date.getDate() - daysBack);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            const res2 = await fetch(
-              `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
-            );
-            if (res2.ok) {
-              const data = await res2.json();
-              if (data.close && data.close !== 100) {
-                lastClose = data.close;
-                console.log(`[Polygon] Got close for ${dateStr}: $${lastClose}`);
-                break;
+        const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': anthropicKey,
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-20250805',
+            max_tokens: 100,
+            messages: [
+              {
+                role: 'user',
+                content: `What is the current stock price of ${ticker}? Reply with ONLY a number, nothing else. Example: 717.50`
               }
-            }
-          }
+            ],
+          }),
+        });
+        
+        if (claudeRes.ok) {
+          const claudeData = await claudeRes.json();
+          const priceText = claudeData.content[0]?.text?.trim() || '100';
+          price = parseFloat(priceText) || 100;
+          console.log(`[Claude] Got price for ${ticker}: $${price}`);
         }
       } catch (err) {
-        console.log('[Polygon] Price fetch failed:', err.message);
+        console.log('[Claude] Price fetch failed:', err.message);
       }
-      return res.status(200).json({ lastClose, ticker });
+      return res.status(200).json({ price, ticker });
     }
 
     // ========== FETCH EXPIRATIONS ==========
