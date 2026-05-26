@@ -44,11 +44,30 @@ export default async function handler(req, res) {
           console.log(`[Polygon] Found ${chainData.results?.length || 0} total options`);
           
           if (chainData.results && Array.isArray(chainData.results)) {
+            console.log(`[Polygon] Found ${chainData.results.length} total options`);
+            console.log(`[Polygon] Sample option keys:`, Object.keys(chainData.results[0] || {}));
+            
+            // Try different date formats
+            const dateFormats = [
+              expiryDate, // 2026-06-30
+              expiryDate.replace(/-/g, ''), // 20260630
+              new Date(expiryDate).getTime() / 1000 // Unix timestamp
+            ];
+            
+            console.log(`[Polygon] Trying date formats:`, dateFormats);
+            
             // Filter for the specific expiration date
-            const filteredByDate = chainData.results.filter(opt => {
-              const optExpiry = opt.expiration_date || opt.expiry;
-              return optExpiry === expiryDate;
-            });
+            let filteredByDate = [];
+            for (const dateFormat of dateFormats) {
+              filteredByDate = chainData.results.filter(opt => {
+                const optExpiry = opt.expiration_date || opt.expiry || opt.expiryDate;
+                return optExpiry === dateFormat || optExpiry == dateFormat;
+              });
+              if (filteredByDate.length > 0) {
+                console.log(`[Polygon] ✅ Found ${filteredByDate.length} matches with format: ${dateFormat}`);
+                break;
+              }
+            }
             
             console.log(`[Polygon] Filtered to ${filteredByDate.length} options for ${expiryDate}`);
             
