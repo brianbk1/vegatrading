@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
   const [currentPrice, setCurrentPrice] = useState(null);
+  const [tickerFetchInProgress, setTickerFetchInProgress] = useState(false);
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
   const [accountSize, setAccountSize] = useState(50000);
@@ -19,8 +20,15 @@ export default function DayTradingApp() {
     console.log(`📍 INPUT: newTicker="${newTicker}" -> upperTicker="${upperTicker}"`);
     setTicker(upperTicker);
     
+    // Prevent multiple simultaneous fetches
+    if (tickerFetchInProgress) {
+      console.log(`📍 SKIPPING: fetch already in progress for another ticker`);
+      return;
+    }
+    
     // Always fetch fresh price - no caching
     if (upperTicker.length >= 1) {
+      setTickerFetchInProgress(true);
       console.log(`📍 FETCHING price for ticker: "${upperTicker}"`);
       try {
         const payload = { ticker: upperTicker, getPrice: true };
@@ -40,6 +48,8 @@ export default function DayTradingApp() {
         }
       } catch (err) {
         console.log('📍 FETCH FAILED:', err.message);
+      } finally {
+        setTickerFetchInProgress(false);
       }
     }
   };
