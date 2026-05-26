@@ -385,6 +385,32 @@ export default function DayTradingApp() {
               <strong>📚 What This Means:</strong> {analysisResult.technicalSummary}
             </div>
 
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>📈 Price Chart</h3>
+            <svg viewBox="0 0 400 200" style={{ width: '100%', height: '200px', marginBottom: '2rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: 'white' }}>
+              {/* Grid lines */}
+              <line x1="40" y1="20" x2="40" y2="180" stroke="#d1d5db" strokeWidth="1" />
+              <line x1="40" y1="180" x2="390" y2="180" stroke="#d1d5db" strokeWidth="1" />
+              
+              {/* Price labels */}
+              <text x="5" y="25" fontSize="10" fill="#6b7280">High</text>
+              <text x="5" y="185" fontSize="10" fill="#6b7280">Low</text>
+              
+              {/* Random price points */}
+              {Array.from({length: 20}).map((_, i) => {
+                const x = 40 + (i * 17.5);
+                const y = 50 + Math.sin(i * 0.5) * 40 + Math.random() * 30;
+                return <circle key={i} cx={x} cy={y} r="2" fill="#ff8c42" />;
+              })}
+              
+              {/* Current price line */}
+              <line x1="40" y1="100" x2="390" y2="100" stroke="#ff6b6b" strokeWidth="2" strokeDasharray="5,5" />
+              <text x="300" y="95" fontSize="11" fill="#ef4444" fontWeight="600">Current: ${analysisResult.lastClose.toFixed(2)}</text>
+              
+              {/* Strike price line */}
+              <line x1="40" y1="60" x2="390" y2="60" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5" />
+              <text x="300" y="55" fontSize="11" fill="#dc2626" fontWeight="600">Strike: ${analysisResult.strikePrice.toFixed(2)}</text>
+            </svg>
+
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>💰 Risk/Reward Analysis</h3>
             <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>

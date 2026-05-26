@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes } = req.body;
+  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPriceOnly } = req.body;
   const polygonKey = process.env.POLYGON_API_KEY;
 
   if (!polygonKey) {
@@ -11,6 +11,41 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ========== GET PRICE ONLY ==========
+    if (getPriceOnly && ticker) {
+      console.log(`[Polygon] Fetching price for ${ticker}`);
+      let lastClose = 100;
+      try {
+        // Use today's date
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0];
+        const priceRes = await fetch(
+          `https://api.polygon.io/v1/open-close/${ticker}/${dateStr}?apikey=${polygonKey}`
+        );
+        if (priceRes.ok) {
+          const priceData = await priceRes.json();
+          lastClose = priceData.close || 100;
+          console.log(`[Polygon] Got price for ${dateStr}: $${lastClose}`);
+        } else {
+          // Try yesterday if today's data isn't available
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const res2 = await fetch(
+            `https://api.polygon.io/v1/open-close/${ticker}/${yesterdayStr}?apikey=${polygonKey}`
+          );
+          if (res2.ok) {
+            const data = await res2.json();
+            lastClose = data.close || 100;
+            console.log(`[Polygon] Got price for ${yesterdayStr}: $${lastClose}`);
+          }
+        }
+      } catch (err) {
+        console.log('[Polygon] Price fetch failed:', err.message);
+      }
+      return res.status(200).json({ lastClose, ticker });
+    }
+
     // ========== FETCH EXPIRATIONS ==========
     if (fetchExpirations && ticker) {
       console.log(`[Polygon] Fetching expirations for ${ticker}`);
