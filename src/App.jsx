@@ -16,34 +16,30 @@ export default function DayTradingApp() {
   // Fetch current price from Polygon when ticker changes
   const handleTickerChange = async (newTicker) => {
     const upperTicker = newTicker.toUpperCase();
+    console.log(`📍 INPUT: newTicker="${newTicker}" -> upperTicker="${upperTicker}"`);
     setTicker(upperTicker);
     
-    // Check localStorage first
-    const cachedPrice = localStorage.getItem(`price_${upperTicker}`);
-    if (cachedPrice) {
-      setCurrentPrice(parseFloat(cachedPrice));
-      console.log(`📍 Loaded cached price from localStorage: ${cachedPrice}`);
-    }
-    
-    // Then fetch fresh price
+    // Always fetch fresh price - no caching
     if (upperTicker.length >= 1) {
-      console.log(`📍 Fetching fresh price for: ${upperTicker}`);
+      console.log(`📍 FETCHING price for ticker: "${upperTicker}"`);
       try {
+        const payload = { ticker: upperTicker, getPrice: true };
+        console.log(`📍 SENDING payload:`, JSON.stringify(payload));
         const res = await fetch('/api/fetch-data', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticker: upperTicker, getPrice: true }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
-        console.log(`📍 Fresh price response:`, data);
+        console.log(`📍 RECEIVED response for ticker "${data.ticker}":`, data);
         if (data.price && data.price > 1) {
-          console.log(`📍 Setting current price to: ${data.price}`);
+          console.log(`📍 SETTING currentPrice to: $${data.price} (from ticker ${data.ticker})`);
           setCurrentPrice(data.price);
-          // Store in localStorage to persist
-          localStorage.setItem(`price_${upperTicker}`, data.price.toString());
+        } else {
+          console.log(`📍 INVALID price in response:`, data.price);
         }
       } catch (err) {
-        console.log('📍 Price fetch failed:', err.message);
+        console.log('📍 FETCH FAILED:', err.message);
       }
     }
   };
@@ -59,14 +55,17 @@ export default function DayTradingApp() {
     }
     setIsAnalyzing(true);
     setError('');
+    console.log(`🚀 ANALYZING with currentPrice=${currentPrice}`);
     try {
       const dataResponse = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticker, strikePrice, daysToExpiry, optionPrice, optionType, currentPrice }),
       });
+      console.log(`🚀 Response received`);
       if (!dataResponse.ok) throw new Error('API error');
       const realData = await dataResponse.json();
+      console.log(`🚀 Data back from API:`, realData);
       const rsiScore = Math.round(parseFloat(realData.rsi14 || 50));
       const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
       const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));

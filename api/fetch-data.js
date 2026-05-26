@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   try {
     // ========== GET PRICE FROM POLYGON ==========
     if (getPrice && ticker) {
-      console.log(`[Polygon] 🔍 Fetching current price for ${ticker}`);
+      console.log(`[Polygon] 🔍 Fetching current price for TICKER: ${ticker}`);
       let lastClose = 100;
       try {
         // Try last quote (real-time)
@@ -23,6 +23,7 @@ export default async function handler(req, res) {
         );
         if (priceRes.ok) {
           const priceData = await priceRes.json();
+          console.log(`[Polygon] 🔍 Quote response for ${ticker}:`, JSON.stringify(priceData).substring(0, 200));
           if (priceData.results && priceData.results[0]) {
             lastClose = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
             console.log(`[Polygon] 🔍 Got last price for ${ticker}: $${lastClose}`);
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
         
         // If last quote didn't work, try previous close dates
         if (lastClose === 100) {
-          console.log('[Polygon] 🔍 Last quote returned $100, trying previous dates');
+          console.log('[Polygon] 🔍 Last quote returned $100 for ' + ticker + ', trying previous dates');
           for (let daysBack = 0; daysBack <= 7; daysBack++) {
             const date = new Date();
             date.setDate(date.getDate() - daysBack);
@@ -44,16 +45,16 @@ export default async function handler(req, res) {
               const data = await res2.json();
               if (data.close && data.close !== 100) {
                 lastClose = data.close;
-                console.log(`[Polygon] 🔍 Got close for ${dateStr}: $${lastClose}`);
+                console.log(`[Polygon] 🔍 Got close for ${ticker} on ${dateStr}: $${lastClose}`);
                 break;
               }
             }
           }
         }
       } catch (err) {
-        console.log('[Polygon] 🔍 Price fetch failed:', err.message);
+        console.log('[Polygon] 🔍 Price fetch failed for ' + ticker + ':', err.message);
       }
-      console.log(`[Polygon] 🔍 Returning price: $${lastClose}`);
+      console.log(`[Polygon] 🔍 Returning price for ${ticker}: $${lastClose}`);
       return res.status(200).json({ price: lastClose, ticker });
     }
 
@@ -187,7 +188,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Strike price and option price required' });
     }
 
+    console.log(`[Backend] 🚀 ANALYZE called with: ticker=${ticker}, currentPrice=${currentPrice}, strikePrice=${strikePrice}`);
+    
     let lastClose = currentPrice || 100;
+    console.log(`[Backend] 🚀 Using lastClose=${lastClose} (currentPrice=${currentPrice})`);
     
     // Only fetch if currentPrice wasn't provided
     if (!currentPrice) {
