@@ -5,81 +5,93 @@ export default async function handler(req, res) {
 
   const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchChain } = req.body;
 
-  const finnhubKey = process.env.FINNHUB_API_KEY;
   const polygonKey = process.env.POLYGON_API_KEY;
 
-  if (!finnhubKey && !polygonKey) {
-    return res.status(500).json({ error: 'Missing API keys' });
-  }
-
   try {
-    // ========== FETCH OPTIONS CHAIN (Finnhub) ==========
+    // ========== FETCH OPTIONS CHAIN (Polygon) ==========
     if (fetchChain && ticker && expiryDate) {
-      console.log(`[Finnhub] Fetching options chain for ${ticker} expiring ${expiryDate}`);
+      console.log(`[Polygon] Fetching options chain for ${ticker} expiring ${expiryDate}`);
       
       // Get current stock price first
       let currentPrice = 100;
       try {
         const priceRes = await fetch(
-          `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${finnhubKey}`
+          `https://api.polygon.io/v1/open-close/${ticker}/2026-05-26?apikey=${polygonKey}`
         );
         if (priceRes.ok) {
           const priceData = await priceRes.json();
-          currentPrice = priceData.c || 100;
+          currentPrice = priceData.close || 100;
+          console.log(`[Polygon] Current price: $${currentPrice}`);
         }
       } catch (err) {
-        console.log('[Finnhub] Price fetch failed, using fallback');
+        console.log('[Polygon] Price fetch failed, using fallback');
       }
 
-      // Fetch options data from Finnhub
+      // Format expiry date for Polygon (YYYY-MM-DD)
+      const expiryFormatted = expiryDate;
+
+      // Fetch options chain from Polygon
+      let optionsChain = [];
       try {
+        console.log(`[Polygon] Fetching chain for ${ticker} on ${expiryFormatted}`);
+        
+        // Polygon options endpoint: /v3/snapshot/options/chains/{underlyingTicker}
         const chainRes = await fetch(
-          `https://finnhub.io/api/v1/stock/option-chain?symbol=${ticker}&from=${expiryDate}&to=${expiryDate}&token=${finnhubKey}`
+          `https://api.polygon.io/v3/snapshot/options/chains/${ticker}?expiration_date=${expiryFormatted}&limit=100&apikey=${polygonKey}`
         );
 
+        console.log(`[Polygon] Response status: ${chainRes.status}`);
+        
         if (chainRes.ok) {
           const chainData = await chainRes.json();
+          console.log(`[Polygon] Chain response:`, chainData);
           
-          if (chainData.data && chainData.data.length > 0) {
-            // Parse Finnhub options chain format
-            const optionsChain = chainData.data
+          if (chainData.results && chainData.results.length > 0) {
+            optionsChain = chainData.results
               .map(opt => ({
-                strike: opt.strike,
-                bid: opt.bid || 0,
-                ask: opt.ask || 0,
-                mid: ((opt.bid || 0) + (opt.ask || 0)) / 2,
-                iv: opt.impliedVolatility || 0,
+                strike: opt.details?.strike_price || 0,
+                bid: opt.bid_price || 0,
+                ask: opt.ask_price || 0,
+                mid: ((opt.bid_price || 0) + (opt.ask_price || 0)) / 2,
+                iv: opt.open_interest || 0,
                 delta: opt.delta || 0,
-                type: opt.type || 'PUT'
+                type: opt.details?.contract_type === 'call' ? 'CALL' : 'PUT'
               }))
-              .filter(opt => opt.bid > 0 && opt.ask > 0)
+              .filter(opt => opt.strike > 0 && (opt.bid > 0 || opt.ask > 0))
               .sort((a, b) => a.strike - b.strike);
 
-            if (optionsChain.length > 0) {
-              console.log(`[Finnhub] ✅ Got ${optionsChain.length} strikes for ${ticker}`);
-              return res.status(200).json({
-                optionsChain,
-                currentPrice,
-                ticker,
-                expiryDate,
-                dataSource: 'finnhub'
-              });
-            }
+            console.log(`[Polygon] ✅ Got ${optionsChain.length} strikes`);
+          } else {
+            console.log(`[Polygon] No results in response`);
           }
+        } else {
+          console.log(`[Polygon] Chain endpoint returned ${chainRes.status}`);
+          const errBody = await chainRes.text();
+          console.log(`[Polygon] Error: ${errBody}`);
         }
       } catch (err) {
-        console.log('[Finnhub] Chain fetch error:', err.message);
+        console.log('[Polygon] Chain fetch error:', err.message);
       }
 
-      // Fallback: Return empty chain
-      console.log(`[Finnhub] No chain data found, returning empty`);
+      // If no data, return with message
+      if (optionsChain.length === 0) {
+        console.log(`[Polygon] No options data found`);
+        return res.status(200).json({
+          optionsChain: [],
+          currentPrice,
+          ticker,
+          expiryDate,
+          message: 'No options data found for this ticker/date. Try: 1) Different expiration date, 2) More liquid ticker (QQQ, SPY, TSLA), or 3) Manual entry.',
+          dataSource: 'fallback'
+        });
+      }
+
       return res.status(200).json({
-        optionsChain: [],
+        optionsChain,
         currentPrice,
         ticker,
         expiryDate,
-        message: 'Could not fetch options chain. Please enter manually.',
-        dataSource: 'fallback'
+        dataSource: 'polygon'
       });
     }
 
@@ -88,18 +100,19 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Strike price and option price required' });
     }
 
-    // Get real stock data from Finnhub
+    // Get real stock data from Polygon
     let lastClose = 100;
     try {
       const priceRes = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${finnhubKey}`
+        `https://api.polygon.io/v1/open-close/${ticker}/2026-05-26?apikey=${polygonKey}`
       );
       if (priceRes.ok) {
         const priceData = await priceRes.json();
-        lastClose = priceData.c || 100;
+        lastClose = priceData.close || 100;
+        console.log(`[Polygon] Got price: $${lastClose}`);
       }
     } catch (err) {
-      console.log('[Finnhub] Price fetch failed');
+      console.log('[Polygon] Price fetch failed');
     }
 
     let data = {
@@ -114,11 +127,10 @@ export default async function handler(req, res) {
     };
 
     // Try Polygon RSI
-    if (polygonKey) {
-      try {
-        const rsiRes = await fetch(
-          `https://api.polygon.io/v1/indicators/rsi/${ticker}?timespan=day&window=14&series_type=close&long_window=26&short_window=12&signal_window=9&apikey=${polygonKey}`
-        );
+    try {
+      const rsiRes = await fetch(
+        `https://api.polygon.io/v1/indicators/rsi/${ticker}?timespan=day&window=14&series_type=close&long_window=26&short_window=12&signal_window=9&apikey=${polygonKey}`
+      );
 
         if (rsiRes.ok) {
           const rsiData = await rsiRes.json();
