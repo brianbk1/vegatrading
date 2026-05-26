@@ -26,11 +26,13 @@ export default function DayTradingApp() {
         });
         const data = await res.json();
         console.log(`📍 Price response:`, data);
-        if (data.price) {
+        if (data.price && data.price > 1) {
           console.log(`📍 Setting current price to: ${data.price}`);
           setCurrentPrice(data.price);
+          // Store in localStorage to persist
+          localStorage.setItem(`price_${newTicker.toUpperCase()}`, data.price);
         } else {
-          console.log(`📍 No price in response`);
+          console.log(`📍 No valid price in response`);
         }
       } catch (err) {
         console.log('📍 Price fetch failed:', err.message);
@@ -228,6 +230,7 @@ export default function DayTradingApp() {
     setUserThesis('');
     setAnalysisResult(null);
     setError('');
+    // Keep currentPrice - don't reset it
   };
 
   const generateClaudeUrl = (question) => {
@@ -250,11 +253,11 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
               <input type="text" value={ticker} onChange={(e) => handleTickerChange(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
-              {currentPrice && (
+              {(currentPrice && currentPrice > 1) || (ticker && localStorage.getItem(`price_${ticker}`)) ? (
                 <div style={{ fontSize: '0.75rem', color: '#047857', marginTop: '0.25rem', fontWeight: 600 }}>
-                  💵 Current Price: ${currentPrice.toFixed(2)}
+                  💵 Current Price: ${(currentPrice > 1 ? currentPrice : parseFloat(localStorage.getItem(`price_${ticker}`))).toFixed(2)}
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
