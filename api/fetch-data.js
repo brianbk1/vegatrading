@@ -24,32 +24,56 @@ export default async function handler(req, res) {
           const data = await res2.json();
           
           if (data.results && Array.isArray(data.results)) {
-            // Extract unique expiration dates within next 6 months
+            // Extract unique expiration dates
             const expirations = new Set();
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const sixMonthsFromNow = new Date();
-            sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-            sixMonthsFromNow.setHours(23, 59, 59, 999);
-            
-            console.log(`[Polygon] Filtering expirations between ${today.toISOString().split('T')[0]} and ${sixMonthsFromNow.toISOString().split('T')[0]}`);
+            const expirationDates = [];
             
             data.results.forEach(opt => {
               const expiry = opt.details?.expiration_date;
-              if (expiry) {
-                const expiryDate = new Date(expiry + 'T00:00:00Z');
-                if (expiryDate >= today && expiryDate <= sixMonthsFromNow) {
-                  expirations.add(expiry);
-                }
+              if (expiry && !expirations.has(expiry)) {
+                expirations.add(expiry);
+                expirationDates.push(expiry);
               }
             });
             
-            const expirationList = Array.from(expirations).sort();
-            console.log(`[Polygon] ✅ Found ${expirationList.length} expirations in next 6 months: ${expirationList.slice(0, 10).join(', ')}`);
+            console.log(`[Polygon] Found ${expirationDates.length} total unique expirations`);
+            console.log(`[Polygon] Sample expirations: ${expirationDates.slice(0, 10).join(', ')}`);
+            
+            // Filter to next 12 months (more generous)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            oneYearFromNow.setHours(23, 59, 59, 999);
+            
+            const filteredExpirations = expirationDates.filter(expiry => {
+              try {
+                // Parse date (could be 2026-05-29 or 20260529)
+                let expiryDate;
+                if (expiry.includes('-')) {
+                  expiryDate = new Date(expiry + 'T00:00:00Z');
+                } else {
+                  // Format: YYYYMMDD
+                  const year = parseInt(expiry.substring(0, 4));
+                  const month = parseInt(expiry.substring(4, 6)) - 1;
+                  const day = parseInt(expiry.substring(6, 8));
+                  expiryDate = new Date(year, month, day);
+                }
+                
+                const isValid = expiryDate >= today && expiryDate <= oneYearFromNow;
+                return isValid;
+              } catch (e) {
+                console.log(`[Polygon] Could not parse date: ${expiry}`);
+                return false;
+              }
+            }).sort();
+            
+            console.log(`[Polygon] ✅ Filtered to ${filteredExpirations.length} expirations in next 12 months`);
+            console.log(`[Polygon] Expirations: ${filteredExpirations.slice(0, 15).join(', ')}`);
             
             return res.status(200).json({
-              expirations: expirationList,
+              expirations: filteredExpirations,
               ticker
             });
           }
