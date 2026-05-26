@@ -24,15 +24,29 @@ export default async function handler(req, res) {
           const data = await res2.json();
           
           if (data.results && Array.isArray(data.results)) {
-            // Extract unique expiration dates
+            // Extract unique expiration dates within next 6 months
             const expirations = new Set();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const sixMonthsFromNow = new Date();
+            sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+            sixMonthsFromNow.setHours(23, 59, 59, 999);
+            
+            console.log(`[Polygon] Filtering expirations between ${today.toISOString().split('T')[0]} and ${sixMonthsFromNow.toISOString().split('T')[0]}`);
+            
             data.results.forEach(opt => {
               const expiry = opt.details?.expiration_date;
-              if (expiry) expirations.add(expiry);
+              if (expiry) {
+                const expiryDate = new Date(expiry + 'T00:00:00Z');
+                if (expiryDate >= today && expiryDate <= sixMonthsFromNow) {
+                  expirations.add(expiry);
+                }
+              }
             });
             
             const expirationList = Array.from(expirations).sort();
-            console.log(`[Polygon] Found ${expirationList.length} expirations: ${expirationList.slice(0, 5).join(', ')}`);
+            console.log(`[Polygon] ✅ Found ${expirationList.length} expirations in next 6 months: ${expirationList.slice(0, 10).join(', ')}`);
             
             return res.status(200).json({
               expirations: expirationList,
