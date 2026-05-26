@@ -9,6 +9,49 @@ export default function DayTradingApp() {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [optionsChain, setOptionsChain] = useState([]);
+  const [showChain, setShowChain] = useState(false);
+  const [isFetchingChain, setIsFetchingChain] = useState(false);
+  const handleFetchChain = async () => {
+    if (!ticker || !expiryDate) {
+      setError('Please enter Ticker and select Expiry Date');
+      return;
+    }
+    setIsFetchingChain(true);
+    setError('');
+    try {
+      const res = await fetch('/api/fetch-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticker,
+          expiryDate,
+          fetchChain: true
+        }),
+      });
+      const data = await res.json();
+      setOptionsChain(data.optionsChain || []);
+      setShowChain(true);
+      if (!data.optionsChain || data.optionsChain.length === 0) {
+        setError('No options data found. Please enter manually.');
+      }
+      console.log(`[Chain] Got ${data.optionsChain?.length || 0} strikes`);
+    } catch (err) {
+      console.error('Chain fetch error:', err);
+      setError('Failed to fetch options chain. Please enter manually.');
+    } finally {
+      setIsFetchingChain(false);
+    }
+  };
+
+  const handleSelectStrike = (chain) => {
+    setStrikePrice(chain.strike.toString());
+    setOptionPrice(chain.mid.toFixed(2));
+    setShowChain(false);
+    setError('');
+  };
+
   const handleAnalyze = async () => {
     if (!strikePrice || !optionPrice) {
       setError('Please enter Strike Price and Option Price');
@@ -293,6 +336,87 @@ export default function DayTradingApp() {
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Days to Expiry</label>
               <input type="number" value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)} min="1" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem', borderTop: '2px solid #f0f0f0', paddingTop: '1.5rem' }}>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#ff8c42' }}>📊 OR: Fetch Live Options Chain</h4>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Expiration Date</label>
+                <input 
+                  type="date" 
+                  value={expiryDate} 
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
+                />
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Select the option expiration date to fetch available strikes</div>
+              </div>
+              <button
+                onClick={handleFetchChain}
+                disabled={isFetchingChain || !ticker || !expiryDate}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: isFetchingChain ? '#d1d5db' : '#ff8c42',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: isFetchingChain || !ticker || !expiryDate ? 'not-allowed' : 'pointer',
+                  marginBottom: '1rem'
+                }}
+              >
+                {isFetchingChain ? '⏳ Fetching...' : '📡 Fetch Options Chain'}
+              </button>
+
+              {showChain && optionsChain.length > 0 && (
+                <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1rem', maxHeight: '300px', overflowY: 'auto' }}>
+                  <h5 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }}>
+                    Click a strike to select (bid/ask/mid shown):
+                  </h5>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem' }}>
+                    {optionsChain.map((chain, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSelectStrike(chain)}
+                        style={{
+                          padding: '0.75rem',
+                          background: 'white',
+                          border: '1px solid #00c8c8',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#ecfdf5'}
+                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                      >
+                        <div style={{ fontWeight: 600, color: '#1f2937', marginBottom: '0.25rem' }}>
+                          Strike: ${chain.strike.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                          Bid: ${chain.bid.toFixed(2)} | Ask: ${chain.ask.toFixed(2)} | Mid: ${chain.mid.toFixed(2)} | IV: {(chain.iv * 100).toFixed(1)}%
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setShowChain(false)}
+                    style={{
+                      width: '100%',
+                      marginTop: '1rem',
+                      padding: '0.5rem',
+                      background: '#e5e7eb',
+                      color: '#4b5563',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Close Chain
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
