@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
   const [currentPrice, setCurrentPrice] = useState(null);
+  const [lastClosePrice, setLastClosePrice] = useState(null);
   const [tickerFetchInProgress, setTickerFetchInProgress] = useState(false);
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
@@ -42,17 +43,18 @@ export default function DayTradingApp() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      console.log(`🔍 RECEIVED response for ticker "${data.ticker}": price=$${data.price}`);
+      console.log(`🔍 RECEIVED response:`, data);
       
       // Only set if response matches the current ticker
-      if (data.ticker === upperTicker && data.price && data.price > 1) {
-        console.log(`🔍 SETTING currentPrice to: $${data.price}`);
-        setCurrentPrice(data.price);
+      if (data.ticker === upperTicker && data.currentPrice && data.currentPrice > 1) {
+        console.log(`🔍 SETTING prices - current: $${data.currentPrice}, lastClose: $${data.lastClose}`);
+        setCurrentPrice(data.currentPrice);
+        setLastClosePrice(data.lastClose);
       } else if (data.ticker !== upperTicker) {
         console.log(`🔍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
         setError(`Price fetch returned wrong ticker: ${data.ticker}`);
       } else {
-        console.log(`🔍 INVALID price in response:`, data.price);
+        console.log(`🔍 INVALID price in response:`, data.currentPrice);
         setError('Invalid price received');
       }
     } catch (err) {
@@ -285,7 +287,7 @@ export default function DayTradingApp() {
                   disabled={tickerFetchInProgress}
                   style={{
                     padding: '0.75rem 1.5rem',
-                    background: '#00c8c8',
+                    background: '#ff8c42',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -298,11 +300,22 @@ export default function DayTradingApp() {
                   {tickerFetchInProgress ? '⏳ Checking...' : '💵 Check Price'}
                 </button>
               </div>
-              {currentPrice && currentPrice > 1 && (
-                <div style={{ fontSize: '0.85rem', color: '#047857', marginTop: '0.5rem', fontWeight: 600, background: '#ecfdf5', padding: '0.75rem', borderRadius: '6px', border: '1px solid #86efac' }}>
-                  💵 Current Price: ${currentPrice.toFixed(2)}
+              {(currentPrice && currentPrice > 1) || (lastClosePrice && lastClosePrice > 1) ? (
+                <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600, background: '#fef3c7', padding: '1rem', borderRadius: '6px', border: '1px solid #fcd34d', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {currentPrice && currentPrice > 1 && (
+                    <div style={{ color: '#047857' }}>
+                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>💵 Current</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>${currentPrice.toFixed(2)}</div>
+                    </div>
+                  )}
+                  {lastClosePrice && lastClosePrice > 1 && (
+                    <div style={{ color: '#047857' }}>
+                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>📊 Last Close</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#f59e0b' }}>${lastClosePrice.toFixed(2)}</div>
+                    </div>
+                  )}
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>

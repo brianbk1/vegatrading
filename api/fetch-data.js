@@ -15,24 +15,30 @@ export default async function handler(req, res) {
     // ========== GET PRICE FROM POLYGON ==========
     if (getPrice && ticker) {
       console.log(`[Polygon] 🔍 Fetching current price for TICKER: ${ticker}`);
+      let currentPrice = 100;
       let lastClose = 100;
+      
       try {
-        // Try last quote (real-time)
+        // Try last quote (real-time/current price)
         const priceRes = await fetch(
           `https://api.polygon.io/v3/quotes/latest?symbols=${ticker}&apikey=${polygonKey}`
         );
         if (priceRes.ok) {
           const priceData = await priceRes.json();
-          console.log(`[Polygon] 🔍 Quote response for ${ticker}:`, JSON.stringify(priceData).substring(0, 200));
           if (priceData.results && priceData.results[0]) {
-            lastClose = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
-            console.log(`[Polygon] 🔍 Got last price for ${ticker}: $${lastClose}`);
+            currentPrice = priceData.results[0].last_quote?.ask || priceData.results[0].last_price || 100;
+            console.log(`[Polygon] 🔍 Got current price for ${ticker}: $${currentPrice}`);
           }
         }
-        
-        // If last quote didn't work, try previous close dates
-        if (lastClose === 100) {
-          console.log('[Polygon] 🔍 Last quote returned $100 for ' + ticker + ', trying previous dates');
+      } catch (err) {
+        console.log('[Polygon] 🔍 Current price fetch failed:', err.message);
+      }
+      
+      // Get last close (previous trading day close)
+      try {
+        if (currentPrice === 100) {
+          // If current didn't work, try previous close dates
+          console.log('[Polygon] 🔍 Current price returned $100, trying previous dates');
           for (let daysBack = 0; daysBack <= 7; daysBack++) {
             const date = new Date();
             date.setDate(date.getDate() - daysBack);
@@ -45,17 +51,35 @@ export default async function handler(req, res) {
               const data = await res2.json();
               if (data.close && data.close !== 100) {
                 lastClose = data.close;
+                currentPrice = data.close;
                 console.log(`[Polygon] 🔍 Got close for ${ticker} on ${dateStr}: $${lastClose}`);
                 break;
               }
             }
           }
+        } else {
+          // If we got current price, also get yesterday's close
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          const res2 = await fetch(
+            `https://api.polygon.io/v1/open-close/${ticker}/${yesterdayStr}?apikey=${polygonKey}`
+          );
+          if (res2.ok) {
+            const data = await res2.json();
+            if (data.close && data.close > 0) {
+              lastClose = data.close;
+              console.log(`[Polygon] 🔍 Got last close for ${ticker} on ${yesterdayStr}: $${lastClose}`);
+            }
+          }
         }
       } catch (err) {
-        console.log('[Polygon] 🔍 Price fetch failed for ' + ticker + ':', err.message);
+        console.log('[Polygon] 🔍 Last close fetch failed:', err.message);
+        lastClose = currentPrice; // Fallback to current if close unavailable
       }
-      console.log(`[Polygon] 🔍 Returning price for ${ticker}: $${lastClose}`);
-      return res.status(200).json({ price: lastClose, ticker });
+      
+      console.log(`[Polygon] 🔍 Returning for ${ticker}: current=$${currentPrice}, lastClose=$${lastClose}`);
+      return res.status(200).json({ currentPrice, lastClose, ticker });
     }
 
     // ========== FETCH EXPIRATIONS ==========
