@@ -339,16 +339,41 @@ export default function DayTradingApp() {
               <div style={{ fontSize: '0.85rem', color: '#78350f', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{analysisResult.weeklyEvents}</div>
             </div>
 
-            <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#f59e0b' : '#dc2626', marginBottom: '0.5rem' }}>{analysisResult.overallScore}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: analysisResult.overallScore > 75 ? '#059669' : analysisResult.overallScore > 60 ? '#d97706' : '#dc2626', marginBottom: '1rem' }}>
-                {analysisResult.overallScore > 75 ? '🟢 Institutional Grade' : analysisResult.overallScore > 60 ? '🟡 Trade Worthy' : '🔴 Caution'}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Liquidity</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.liquidityScore}</div></div>
-                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Risk/Reward</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.riskRewardScore}</div></div>
-                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '6px' }}><div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>Technical</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.technicalScore}</div></div>
-              </div>
+            <div style={{ background: analysisResult.overallScore > 75 ? '#ecfdf5' : analysisResult.overallScore > 60 ? '#fffbeb' : '#fef2f2', border: `2px solid ${analysisResult.overallScore > 75 ? '#10b981' : analysisResult.overallScore > 60 ? '#f59e0b' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#065f46' : analysisResult.overallScore > 60 ? '#92400e' : '#7f1d1d' }}>💡 Overall Trade Verdict</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.7', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>{analysisResult.thesisStatement}</p>
+            </div>
+
+            <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>🤖 Ask AI More Questions</h3>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#374151' }}>Have questions about this trade? Ask Claude AI for more analysis:</p>
+              <textarea 
+                id="aiQuestion" 
+                placeholder="e.g., Should I wait for RSI to cool down? What if earnings come before expiration? Is this a good hedge?" 
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #00c8c8', borderRadius: '6px', fontSize: '0.9rem', fontFamily: 'system-ui', minHeight: '80px', resize: 'vertical', marginBottom: '1rem' }} 
+              />
+              <a 
+                href={`https://claude.ai?prompt=I'm+analyzing+a+${analysisResult.ticker}+options+trade:+Strike+$${analysisResult.strikePrice.toFixed(2)},+Price+$${analysisResult.optionPrice},+${analysisResult.daysToExpiry}+DTE,+RSI+${analysisResult.rsiScore},+R/R+1:${analysisResult.riskRewardRatio}.+Ask+me+your+question+in+the+chat+box+below+this+message.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-block',
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: '#00c8c8',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  fontSize: '0.95rem'
+                }}
+              >
+                💬 Open Claude Chat with Trade Details
+              </a>
+              <p style={{ margin: '1rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>Your trade data will be shared in the prompt so Claude can give specific feedback.</p>
             </div>
 
             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
