@@ -91,7 +91,6 @@ export default function DayTradingApp() {
       const stochasticK = Math.round(parseFloat(realData.stochasticK || 50));
       const ivPercentile = Math.round(parseFloat(realData.ivPercentile || 50));
       const strikeNum = parseFloat(strikePrice);
-      const optionPriceNum = parseFloat(optionPrice);
       const currentPriceNum = currentPrice;
       const daysNum = parseInt(daysToExpiry);
       // Black-Scholes Greeks calculation (real formulas)
