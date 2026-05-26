@@ -17,6 +17,7 @@ export default function DayTradingApp() {
   const handleTickerChange = async (newTicker) => {
     setTicker(newTicker.toUpperCase());
     if (newTicker.length >= 1) {
+      console.log(`📍 Fetching price for: ${newTicker.toUpperCase()}`);
       try {
         const res = await fetch('/api/fetch-data', {
           method: 'POST',
@@ -24,11 +25,15 @@ export default function DayTradingApp() {
           body: JSON.stringify({ ticker: newTicker.toUpperCase(), getPrice: true }),
         });
         const data = await res.json();
+        console.log(`📍 Price response:`, data);
         if (data.price) {
+          console.log(`📍 Setting current price to: ${data.price}`);
           setCurrentPrice(data.price);
+        } else {
+          console.log(`📍 No price in response`);
         }
       } catch (err) {
-        console.log('Price fetch failed');
+        console.log('📍 Price fetch failed:', err.message);
       }
     }
   };
