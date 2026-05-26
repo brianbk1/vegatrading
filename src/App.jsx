@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('QQQ');
   const [strikePrice, setStrikePrice] = useState('');
-  const [daysToExpiry, setDaysToExpiry] = useState('1');
   const [optionPrice, setOptionPrice] = useState('');
   const [accountSize, setAccountSize] = useState(50000);
   const [userThesis, setUserThesis] = useState('');
@@ -10,41 +9,77 @@ export default function DayTradingApp() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
   const [entryMode, setEntryMode] = useState('manual');
-  const [expiryDate, setExpiryDate] = useState('');
+  
+  // Fetch mode state
+  const [expirations, setExpirations] = useState([]);
+  const [selectedExpiry, setSelectedExpiry] = useState('');
   const [optionsChain, setOptionsChain] = useState([]);
-  const [showChain, setShowChain] = useState(false);
-  const [isFetchingChain, setIsFetchingChain] = useState(false);
+  const [isFetchingExpirations, setIsFetchingExpirations] = useState(false);
+  const [isFetchingStrikes, setIsFetchingStrikes] = useState(false);
+  const [daysToExpiry, setDaysToExpiry] = useState('1');
 
-  const handleFetchChain = async () => {
-    if (!ticker || !expiryDate) {
-      setError('Please enter Ticker and select Expiry Date');
+  const handleFetchExpirations = async () => {
+    if (!ticker) {
+      setError('Please enter Ticker');
       return;
     }
-    setIsFetchingChain(true);
+    setIsFetchingExpirations(true);
     setError('');
     try {
       const res = await fetch('/api/fetch-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticker, expiryDate, fetchChain: true }),
+        body: JSON.stringify({ ticker, fetchExpirations: true }),
       });
       const data = await res.json();
-      setOptionsChain(data.optionsChain || []);
-      setShowChain(true);
-      if (!data.optionsChain || data.optionsChain.length === 0) {
-        setError('No options data found for this date. Try a different expiration or use manual entry.');
+      if (data.expirations && data.expirations.length > 0) {
+        setExpirations(data.expirations);
+        setSelectedExpiry('');
+        setOptionsChain([]);
+      } else {
+        setError('No expirations found for this ticker. Try manual entry.');
       }
     } catch (err) {
-      setError('Failed to fetch options chain. Use manual entry instead.');
+      setError('Failed to fetch expirations.');
     } finally {
-      setIsFetchingChain(false);
+      setIsFetchingExpirations(false);
+    }
+  };
+
+  const handleFetchStrikes = async () => {
+    if (!selectedExpiry) {
+      setError('Please select an expiration date');
+      return;
+    }
+    setIsFetchingStrikes(true);
+    setError('');
+    try {
+      const res = await fetch('/api/fetch-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker, expiryDate: selectedExpiry, fetchStrikes: true }),
+      });
+      const data = await res.json();
+      if (data.optionsChain && data.optionsChain.length > 0) {
+        setOptionsChain(data.optionsChain);
+        // Calculate days to expiry
+        const today = new Date();
+        const expiry = new Date(selectedExpiry);
+        const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+        setDaysToExpiry(Math.max(1, daysLeft).toString());
+      } else {
+        setError('No strike data found for this expiration.');
+      }
+    } catch (err) {
+      setError('Failed to fetch strikes.');
+    } finally {
+      setIsFetchingStrikes(false);
     }
   };
 
   const handleSelectStrike = (chain) => {
     setStrikePrice(chain.strike.toString());
     setOptionPrice(chain.mid.toFixed(2));
-    setShowChain(false);
     setError('');
   };
 
@@ -166,7 +201,9 @@ export default function DayTradingApp() {
     setUserThesis('');
     setAnalysisResult(null);
     setError('');
-    setShowChain(false);
+    setExpirations([]);
+    setSelectedExpiry('');
+    setOptionsChain([]);
   };
 
   return (
@@ -183,7 +220,7 @@ export default function DayTradingApp() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
               <button
-                onClick={() => { setEntryMode('manual'); setShowChain(false); }}
+                onClick={() => { setEntryMode('manual'); setExpirations([]); setSelectedExpiry(''); setOptionsChain([]); }}
                 style={{
                   padding: '1rem',
                   background: entryMode === 'manual' ? '#00c8c8' : '#e0f2fe',
@@ -210,7 +247,7 @@ export default function DayTradingApp() {
                   fontSize: '1rem'
                 }}
               >
-                📡 Fetch Live Data
+                📡 Fetch from Polygon
               </button>
             </div>
 
@@ -230,63 +267,79 @@ export default function DayTradingApp() {
                   <input type="number" value={optionPrice} onChange={(e) => setOptionPrice(e.target.value)} step="0.01" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
                 </div>
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Expiration Date</label>
-                  <input 
-                    type="date" 
-                    value={expiryDate} 
-                    onChange={(e) => {
-                      setExpiryDate(e.target.value);
-                      const today = new Date();
-                      const expiry = new Date(e.target.value);
-                      const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                      setDaysToExpiry(Math.max(1, daysLeft).toString());
-                    }}
-                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
-                  />
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Days to expiry: {daysToExpiry}</div>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Days to Expiry</label>
+                  <input type="number" value={daysToExpiry} onChange={(e) => setDaysToExpiry(e.target.value)} min="1" style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
                 </div>
               </>
             )}
 
             {entryMode === 'fetch' && (
               <>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Expiration Date</label>
-                  <input 
-                    type="date" 
-                    value={expiryDate} 
-                    onChange={(e) => {
-                      setExpiryDate(e.target.value);
-                      const today = new Date();
-                      const expiry = new Date(e.target.value);
-                      const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                      setDaysToExpiry(Math.max(1, daysLeft).toString());
-                    }}
-                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
-                  />
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Days: {daysToExpiry}</div>
-                </div>
                 <button
-                  onClick={handleFetchChain}
-                  disabled={isFetchingChain || !ticker || !expiryDate}
+                  onClick={handleFetchExpirations}
+                  disabled={isFetchingExpirations || !ticker}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
-                    background: isFetchingChain ? '#d1d5db' : '#ff8c42',
+                    background: isFetchingExpirations ? '#d1d5db' : '#ff8c42',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
                     fontWeight: 600,
-                    cursor: isFetchingChain || !ticker || !expiryDate ? 'not-allowed' : 'pointer',
+                    cursor: isFetchingExpirations || !ticker ? 'not-allowed' : 'pointer',
                     marginBottom: '1rem'
                   }}
                 >
-                  {isFetchingChain ? '⏳ Fetching...' : '📡 Fetch Chain'}
+                  {isFetchingExpirations ? '⏳ Loading Expirations...' : '📅 Fetch Expirations'}
                 </button>
-                {showChain && optionsChain.length > 0 && (
-                  <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1rem', maxHeight: '250px', overflowY: 'auto', marginBottom: '1rem' }}>
-                    <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }}>Click strike to select:</h5>
-                    {optionsChain.slice(0, 20).map((chain, idx) => (
+
+                {expirations.length > 0 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Select Expiration Date</label>
+                    <select 
+                      value={selectedExpiry} 
+                      onChange={(e) => {
+                        setSelectedExpiry(e.target.value);
+                        setOptionsChain([]);
+                        const today = new Date();
+                        const expiry = new Date(e.target.value);
+                        const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                        setDaysToExpiry(Math.max(1, daysLeft).toString());
+                      }}
+                      style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }}
+                    >
+                      <option value="">-- Choose an expiration --</option>
+                      {expirations.map((exp, idx) => (
+                        <option key={idx} value={exp}>{exp}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedExpiry && (
+                  <button
+                    onClick={handleFetchStrikes}
+                    disabled={isFetchingStrikes}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: isFetchingStrikes ? '#d1d5db' : '#00c8c8',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: isFetchingStrikes ? 'not-allowed' : 'pointer',
+                      marginBottom: '1rem'
+                    }}
+                  >
+                    {isFetchingStrikes ? '⏳ Loading Strikes...' : '🎯 Fetch Strikes'}
+                  </button>
+                )}
+
+                {optionsChain.length > 0 && (
+                  <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1rem', maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
+                    <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }}>Click a strike to select:</h5>
+                    {optionsChain.slice(0, 30).map((chain, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSelectStrike(chain)}
@@ -299,17 +352,19 @@ export default function DayTradingApp() {
                           borderRadius: '4px',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          fontSize: '0.8rem'
+                          fontSize: '0.75rem',
+                          fontFamily: 'monospace'
                         }}
                       >
-                        ${chain.strike.toFixed(2)} | Bid: ${chain.bid.toFixed(2)} | Ask: ${chain.ask.toFixed(2)} | Mid: ${chain.mid.toFixed(2)}
+                        ${chain.strike.toFixed(2).padStart(7)} | B:{chain.bid.toFixed(2).padStart(6)} | A:{chain.ask.toFixed(2).padStart(6)} | M:{chain.mid.toFixed(2).padStart(6)}
                       </button>
                     ))}
                   </div>
                 )}
+
                 {strikePrice && optionPrice && (
                   <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px', padding: '0.75rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#047857' }}>
-                    ✅ Strike: ${strikePrice} | Price: ${optionPrice}
+                    ✅ Strike: ${strikePrice} | Price: ${optionPrice} | DTE: {daysToExpiry}
                   </div>
                 )}
               </>
@@ -344,7 +399,7 @@ export default function DayTradingApp() {
             <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginTop: '2rem', fontSize: '0.85rem', color: '#374151', lineHeight: '1.8' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>📚 How to Use</h3>
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Manual:</strong> Enter strike & option price from your broker directly.</p>
-              <p style={{ margin: '0 0 0.75rem 0' }}><strong>Fetch:</strong> Select expiry date to pull live options. Click a strike to auto-fill.</p>
+              <p style={{ margin: '0 0 0.75rem 0' }}><strong>Fetch:</strong> Enter ticker → select expiration → click strike to auto-fill like Schwab.</p>
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Score:</strong> Above 75 = institutional-grade, 60-74 = tradeable, below 60 = caution.</p>
               <p style={{ margin: 0 }}><strong>Verify:</strong> Always cross-check data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.</p>
             </div>

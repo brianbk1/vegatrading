@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchChain } = req.body;
+  const { ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes } = req.body;
   const polygonKey = process.env.POLYGON_API_KEY;
 
   if (!polygonKey) {
@@ -11,95 +11,87 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ========== FETCH OPTIONS CHAIN (Polygon) ==========
-    if (fetchChain && ticker && expiryDate) {
-      console.log(`[Polygon] Fetching options chain for ${ticker} expiring ${expiryDate}`);
+    // ========== FETCH EXPIRATIONS ==========
+    if (fetchExpirations && ticker) {
+      console.log(`[Polygon] Fetching expirations for ${ticker}`);
       
-      let currentPrice = 100;
       try {
-        const priceRes = await fetch(
-          `https://api.polygon.io/v1/open-close/${ticker}/2026-05-26?apikey=${polygonKey}`
-        );
-        if (priceRes.ok) {
-          const priceData = await priceRes.json();
-          currentPrice = priceData.close || 100;
-        }
-      } catch (err) {
-        console.log('[Polygon] Price fetch failed');
-      }
-
-      let optionsChain = [];
-      
-      // Try /v3/snapshot/options endpoint with ticker (search for options by underlying)
-      try {
-        console.log(`[Polygon] Trying /v3/snapshot/options endpoint for ${ticker}`);
-        const chainRes = await fetch(
+        const res2 = await fetch(
           `https://api.polygon.io/v3/snapshot/options/${ticker}?order=desc&limit=250&apikey=${polygonKey}`
         );
         
-        console.log(`[Polygon] Response status: ${chainRes.status}`);
-        
-        if (chainRes.ok) {
-          const chainData = await chainRes.json();
-          console.log(`[Polygon] Found ${chainData.results?.length || 0} total options`);
+        if (res2.ok) {
+          const data = await res2.json();
           
-          if (chainData.results && Array.isArray(chainData.results)) {
-            console.log(`[Polygon] Found ${chainData.results.length} total options`);
-            console.log(`[Polygon] Sample option keys:`, Object.keys(chainData.results[0] || {}));
+          if (data.results && Array.isArray(data.results)) {
+            // Extract unique expiration dates
+            const expirations = new Set();
+            data.results.forEach(opt => {
+              const expiry = opt.details?.expiration_date;
+              if (expiry) expirations.add(expiry);
+            });
             
-            // Try different date formats
-            const dateFormats = [
-              expiryDate, // 2026-06-30
-              expiryDate.replace(/-/g, ''), // 20260630
-              new Date(expiryDate).getTime() / 1000 // Unix timestamp
-            ];
+            const expirationList = Array.from(expirations).sort();
+            console.log(`[Polygon] Found ${expirationList.length} expirations: ${expirationList.slice(0, 5).join(', ')}`);
             
-            console.log(`[Polygon] Trying date formats:`, dateFormats);
+            return res.status(200).json({
+              expirations: expirationList,
+              ticker
+            });
+          }
+        }
+      } catch (err) {
+        console.log('[Polygon] Expirations fetch error:', err.message);
+      }
+      
+      return res.status(200).json({ expirations: [], ticker });
+    }
+
+    // ========== FETCH STRIKES FOR EXPIRATION ==========
+    if (fetchStrikes && ticker && expiryDate) {
+      console.log(`[Polygon] Fetching strikes for ${ticker} expiring ${expiryDate}`);
+      
+      let optionsChain = [];
+      
+      try {
+        const res2 = await fetch(
+          `https://api.polygon.io/v3/snapshot/options/${ticker}?order=desc&limit=250&apikey=${polygonKey}`
+        );
+        
+        if (res2.ok) {
+          const data = await res2.json();
+          
+          if (data.results && Array.isArray(data.results)) {
+            console.log(`[Polygon] Got ${data.results.length} total options`);
             
-            // Filter for the specific expiration date
-            let filteredByDate = [];
-            for (const dateFormat of dateFormats) {
-              filteredByDate = chainData.results.filter(opt => {
-                const optExpiry = opt.expiration_date || opt.expiry || opt.expiryDate;
-                return optExpiry === dateFormat || optExpiry == dateFormat;
-              });
-              if (filteredByDate.length > 0) {
-                console.log(`[Polygon] ✅ Found ${filteredByDate.length} matches with format: ${dateFormat}`);
-                break;
-              }
-            }
+            // Filter by expiration date
+            const filtered = data.results.filter(opt => opt.details?.expiration_date === expiryDate);
+            console.log(`[Polygon] Filtered to ${filtered.length} options for ${expiryDate}`);
             
-            console.log(`[Polygon] Filtered to ${filteredByDate.length} options for ${expiryDate}`);
-            
-            if (filteredByDate.length > 0) {
-              optionsChain = filteredByDate
+            if (filtered.length > 0) {
+              optionsChain = filtered
                 .map(opt => ({
-                  strike: opt.details?.strike_price || opt.strike_price || 0,
-                  bid: opt.last_bid || opt.bid || 0,
-                  ask: opt.last_ask || opt.ask || 0,
-                  mid: ((opt.last_bid || opt.bid || 0) + (opt.last_ask || opt.ask || 0)) / 2,
-                  iv: opt.implied_volatility || opt.iv || 0,
-                  delta: opt.delta || 0,
-                  type: opt.details?.contract_type || opt.contract_type || 'PUT'
+                  strike: opt.details?.strike_price || 0,
+                  bid: opt.bid_price || 0,
+                  ask: opt.ask_price || 0,
+                  mid: ((opt.bid_price || 0) + (opt.ask_price || 0)) / 2,
+                  iv: opt.implied_volatility || 0,
+                  delta: opt.greeks?.delta || 0,
+                  type: opt.details?.contract_type === 'call' ? 'CALL' : 'PUT'
                 }))
                 .filter(opt => opt.strike > 0)
                 .sort((a, b) => a.strike - b.strike);
               
-              console.log(`[Polygon] ✅ Parsed ${optionsChain.length} strikes from ${expiryDate}`);
+              console.log(`[Polygon] ✅ Parsed ${optionsChain.length} strikes`);
             }
           }
-        } else {
-          const errText = await chainRes.text();
-          console.log(`[Polygon] Status ${chainRes.status}: ${errText.substring(0, 300)}`);
         }
       } catch (err) {
-        console.log('[Polygon] Chain fetch error:', err.message);
+        console.log('[Polygon] Strikes fetch error:', err.message);
       }
-
-      console.log(`[Polygon] Final result: ${optionsChain.length} strikes`);
+      
       return res.status(200).json({
         optionsChain,
-        currentPrice,
         ticker,
         expiryDate,
         dataSource: optionsChain.length > 0 ? 'polygon' : 'fallback'
