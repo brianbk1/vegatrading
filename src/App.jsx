@@ -275,9 +275,9 @@ export default function DayTradingApp() {
       } else {
         // OTM option - for day traders, focus on move potential not expiration value
         if (optionType === 'call' && strikeNum > currentPriceNum) {
-          plainEnglishVerdict = `This is an OTM ${optionType.toUpperCase()} option—you're buying it cheap ($${maxRiskPerContract}) betting on ${ticker} to rally. Max profit at expiration is $0, BUT every dollar it moves toward your strike = $${Math.abs(delta * 100).toFixed(0)} gain. Use the "Day Trading Profit Potential" chart above to see your real profit if the move happens. ${rsiScore > 70 ? `RSI is overbought (${rsiScore})—wait for a pullback.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days—plenty of time for your move.`;
+          plainEnglishVerdict = `You're buying a cheap OTM ${optionType.toUpperCase()} ($${maxRiskPerContract}), betting on ${ticker} to rally. Every dollar it moves = $${Math.abs(delta * 100).toFixed(0)} gain. See the "Day Trading Profit Potential" chart above for real profit scenarios. ${rsiScore > 70 ? `RSI is overbought (${rsiScore})—wait for pullback.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days to make it happen.`;
         } else if (optionType === 'put' && strikeNum < currentPriceNum) {
-          plainEnglishVerdict = `This is an OTM ${optionType.toUpperCase()} option—you're buying it cheap ($${maxRiskPerContract}) betting on ${ticker} to drop. Max profit at expiration is $0, BUT every dollar it moves down toward your strike = $${Math.abs(delta * 100).toFixed(0)} gain. Use the "Day Trading Profit Potential" chart above to see your real profit if the move happens. ${rsiScore < 30 ? `RSI is oversold (${rsiScore})—wait for a bounce first.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days—plenty of time for your move.`;
+          plainEnglishVerdict = `You're buying a cheap OTM ${optionType.toUpperCase()} ($${maxRiskPerContract}), betting on ${ticker} to drop. Every dollar it moves = $${Math.abs(delta * 100).toFixed(0)} gain. See the "Day Trading Profit Potential" chart above for real profit scenarios. ${rsiScore < 30 ? `RSI is oversold (${rsiScore})—wait for bounce first.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days to make it happen.`;
         } else {
           plainEnglishVerdict = `This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. Unless you have a very specific catalyst (earnings, major news), skip this and wait for a better opportunity.`;
         }
@@ -608,26 +608,21 @@ function ClaudeChat({ analysisResult }) {
     try {
       const tradeContext = `User is analyzing this trade: ${analysisResult.ticker} ${analysisResult.optionType.toUpperCase()} | Strike: $${analysisResult.strikePrice.toFixed(2)} | Current: $${analysisResult.lastClose.toFixed(2)} | Option Price: $${analysisResult.optionPrice} | DTE: ${analysisResult.daysToExpiry} | RSI: ${analysisResult.rsiScore} | Score: ${analysisResult.overallScore}/100`;
       
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/fetch-data', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-opus-4-6',
-          max_tokens: 500,
-          messages: [
-            { role: 'user', content: `${tradeContext}\n\nUser question: ${userMessage}` }
-          ]
+          claudeChat: true,
+          tradeContext,
+          userMessage
         })
       });
 
       const data = await response.json();
-      const assistantMessage = data.content[0]?.text || 'Unable to get response';
+      const assistantMessage = data.response || data.error || 'Unable to get response';
       setMessages(prev => [...prev, { role: 'assistant', text: assistantMessage }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}. Make sure ANTHROPIC_API_KEY is set in .env` }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}. Try again or ask in Claude directly.` }]);
     } finally {
       setLoading(false);
     }
