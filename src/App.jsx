@@ -564,110 +564,20 @@ export default function DayTradingApp() {
             </div>
 
             <div style={{ background: analysisResult.overallScore > 75 ? '#ecfdf5' : analysisResult.overallScore > 60 ? '#fffbeb' : '#fef2f2', border: `2px solid ${analysisResult.overallScore > 75 ? '#10b981' : analysisResult.overallScore > 60 ? '#f59e0b' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#065f46' : analysisResult.overallScore > 60 ? '#92400e' : '#7f1d1d' }}>💡 Overall Trade Verdict</h3>
-              <p style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', lineHeight: '1.7', fontWeight: 600, color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>{analysisResult.thesisStatement}</p>
-              <div style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid', borderColor: analysisResult.overallScore > 75 ? '#86efac' : analysisResult.overallScore > 60 ? '#fcd34d' : '#fca5a5', borderRadius: '6px', padding: '1rem', marginTop: '1rem' }}>
-                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.7', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>
-                  <strong>In Plain English:</strong> {analysisResult.plainEnglishVerdict}
-                </p>
-              </div>
+              <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700, color: analysisResult.overallScore > 75 ? '#065f46' : analysisResult.overallScore > 60 ? '#92400e' : '#7f1d1d' }}>💡 Quick Summary</h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>
+                {analysisResult.plainEnglishVerdict}
+              </p>
             </div>
 
             <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>🤖 Ask Claude AI About This Trade</h3>
-              <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#374151' }}>Click below to ask Claude detailed questions about your trade. Your trade data is automatically included:</p>
-              
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>🤖 Chat with Claude About This Trade</h3>
               <div style={{ background: 'white', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#374151', lineHeight: '1.6' }}>
-                <strong>Trade Summary Being Sent:</strong><br/>
-                • Ticker: {analysisResult.ticker}<br/>
-                • Strike: ${analysisResult.strikePrice.toFixed(2)} | Current: ${analysisResult.lastClose.toFixed(2)}<br/>
-                • Option Price: ${analysisResult.optionPrice} | DTE: {analysisResult.daysToExpiry} days<br/>
-                • RSI: {analysisResult.rsiScore} | R/R: 1:{analysisResult.riskRewardRatio} | Score: {analysisResult.overallScore}<br/>
-                • Max Risk: ${analysisResult.maxRiskPerContract} | Max Gain: ${analysisResult.maxGainPerContract}
+                <strong>Your Trade Context:</strong><br/>
+                • {analysisResult.ticker} ${analysisResult.optionType === 'call' ? '📈' : '📉'} | Strike: ${analysisResult.strikePrice.toFixed(2)} | Current: ${analysisResult.lastClose.toFixed(2)}<br/>
+                • Option Price: ${analysisResult.optionPrice} | DTE: {analysisResult.daysToExpiry} | Score: {analysisResult.overallScore}/100
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <a 
-                  href={generateClaudeUrl('My question:')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: '0.75rem',
-                    background: '#00c8c8',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  💬 Ask a Question
-                </a>
-                
-                <a 
-                  href={generateClaudeUrl('Should I take this trade or wait for a better setup?')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: '0.75rem',
-                    background: '#ff8c42',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  ⚡ Take This Trade or Wait?
-                </a>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <a 
-                  href={generateClaudeUrl('What if I pick a different strike price? How would that change the R/R?')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: '0.75rem',
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  🎯 Try Different Strike?
-                </a>
-                
-                <a 
-                  href={generateClaudeUrl('How do I manage this trade if it goes against me? What is my exit strategy?')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    padding: '0.75rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    textDecoration: 'none',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  🛑 Exit Strategy Help?
-                </a>
-              </div>
-              <p style={{ margin: '1rem 0 0 0', fontSize: '0.75rem', color: '#6b7280' }}>Click any button to open Claude with your trade data pre-filled. Then type your specific question.</p>
+              <ClaudeChat analysisResult={analysisResult} />
             </div>
 
             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
@@ -675,6 +585,109 @@ export default function DayTradingApp() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ClaudeChat({ analysisResult }) {
+  const [messages, setMessages] = React.useState([
+    { role: 'assistant', text: `I'm here to help with your ${analysisResult.ticker} ${analysisResult.optionType.toUpperCase()} trade! Ask me anything about the setup, exit strategy, or market conditions.` }
+  ]);
+  const [input, setInput] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = input;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setLoading(true);
+
+    try {
+      const tradeContext = `User is analyzing this trade: ${analysisResult.ticker} ${analysisResult.optionType.toUpperCase()} | Strike: $${analysisResult.strikePrice.toFixed(2)} | Current: $${analysisResult.lastClose.toFixed(2)} | Option Price: $${analysisResult.optionPrice} | DTE: ${analysisResult.daysToExpiry} | RSI: ${analysisResult.rsiScore} | Score: ${analysisResult.overallScore}/100`;
+      
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-6',
+          max_tokens: 500,
+          messages: [
+            { role: 'user', content: `${tradeContext}\n\nUser question: ${userMessage}` }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      const assistantMessage = data.content[0]?.text || 'Unable to get response';
+      setMessages(prev => [...prev, { role: 'assistant', text: assistantMessage }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}. Make sure ANTHROPIC_API_KEY is set in .env` }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '400px', overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflowY: 'auto', background: '#f9fafb', borderRadius: '6px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', minHeight: '200px' }}>
+        {messages.map((msg, idx) => (
+          <div key={idx} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth: '85%',
+              padding: '0.75rem 1rem',
+              borderRadius: '6px',
+              background: msg.role === 'user' ? '#00c8c8' : '#e0f2fe',
+              color: msg.role === 'user' ? 'white' : '#1e40af',
+              fontSize: '0.9rem',
+              lineHeight: '1.5'
+            }}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {loading && <div style={{ fontSize: '0.85rem', color: '#6b7280', fontStyle: 'italic' }}>Claude is thinking...</div>}
+      </div>
+      
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Ask about your trade..."
+          disabled={loading}
+          style={{
+            flex: 1,
+            padding: '0.75rem',
+            border: '1px solid #d1d5db',
+            borderRadius: '6px',
+            fontSize: '0.9rem',
+            opacity: loading ? 0.6 : 1
+          }}
+        />
+        <button
+          onClick={sendMessage}
+          disabled={loading || !input.trim()}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#00c8c8',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 600,
+            cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+            opacity: loading || !input.trim() ? 0.6 : 1,
+            fontSize: '0.9rem', whiteSpace: 'nowrap'
+          }}
+        >
+          Send
+        </button>
       </div>
     </div>
   );
