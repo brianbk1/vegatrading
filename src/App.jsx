@@ -334,7 +334,12 @@ export default function DayTradingApp() {
   return (
     <div style={{ background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1f2937' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '2rem' }}>⚡ Vega Day Trading Analyzer</h1>
+        <h1 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '2.5rem', fontWeight: 700 }}>⚡ Vega Day Trading Analyzer</h1>
+        <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1rem', color: '#4b5563', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto 2rem' }}>
+          <p style={{ margin: '0 0 1rem 0' }}>Free <strong>options day trading calculator</strong> with real-time <strong>delta and theta calculator</strong>, <strong>IV crush impact simulator</strong>, and automated exit strategy rules.</p>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: '#6b7280' }}>Analyze your <strong>options trades</strong> in seconds. See expected profit at any price move, manage risk with the 2% rule, and trade with confidence.</p>
+        </div>
+
         {!analysisResult ? (
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
@@ -480,9 +485,22 @@ export default function DayTradingApp() {
               <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>Be specific about your reasoning</div>
             </div>
             {error && (<div style={{ background: '#fee2e2', color: '#dc2626', padding: '1rem', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.9rem' }}>⚠️ {error}</div>)}
+            
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>What You Get:</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem', color: '#1f2937' }}>
+                <div>✅ <strong>Real-time Greeks</strong> (Delta, Gamma, Theta, Vega)</div>
+                <div>✅ <strong>IV Crush simulator</strong> (volatility risk)</div>
+                <div>✅ <strong>Day trading profit potential</strong> at any price</div>
+                <div>✅ <strong>Exit strategy rules</strong> (automated)</div>
+                <div>✅ <strong>Risk/reward analysis</strong> (2% position sizing)</div>
+                <div>✅ <strong>AI chat</strong> (ask Claude about your trade)</div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button onClick={handleAnalyze} disabled={isAnalyzing} style={{ flex: 1, padding: '0.75rem', background: '#00c8c8', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: isAnalyzing ? 'not-allowed' : 'pointer', opacity: isAnalyzing ? 0.6 : 1 }}>
-                {isAnalyzing ? '⏳ Analyzing...' : '🚀 ANALYZE'}
+                {isAnalyzing ? '⏳ Analyzing...' : '🚀 ANALYZE TRADE'}
               </button>
               <button onClick={reset} style={{ flex: 1, padding: '0.75rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
                 ↻ RESET
@@ -494,6 +512,24 @@ export default function DayTradingApp() {
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Add your thesis:</strong> Explain why you're making this trade (earnings, technicals, thesis, etc.).</p>
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Get your score:</strong> Above 75 = institutional-grade, 60-74 = tradeable, below 60 = caution.</p>
               <p style={{ margin: 0 }}><strong>Verify:</strong> Always cross-check data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.</p>
+            </div>
+
+            <div style={{ background: '#f9fafb', padding: '2rem', borderRadius: '8px', marginTop: '2rem', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.8', borderLeft: '4px solid #00c8c8' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>Understanding Options Day Trading Calculations</h3>
+              
+              <p style={{ margin: '0 0 1rem 0' }}>Our <strong>free options calculator</strong> helps day traders make smarter decisions by analyzing three critical factors: <strong>delta</strong> (directional risk), <strong>theta</strong> (time decay), and <strong>volatility</strong> (IV crush potential).</p>
+              
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>What is Delta in Options Trading?</h4>
+              <p style={{ margin: '0 0 1rem 0' }}>Delta measures how much your option's price changes when the stock moves $1. A 0.50 delta means $0.50 gain per share, or $50 per contract. Day traders use <strong>delta to calculate expected profit</strong> at different price targets—without waiting for expiration.</p>
+              
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>What is Theta in Options?</h4>
+              <p style={{ margin: '0 0 1rem 0' }}>Theta is the daily cost of holding an option—it erodes your profit by a fixed amount each day. Our <strong>theta calculator</strong> shows exactly how much time decay will cost you, so you can decide if the move will happen fast enough to offset it.</p>
+              
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>What Causes IV Crush?</h4>
+              <p style={{ margin: '0 0 1rem 0' }}>Implied volatility spikes before earnings or Fed decisions, then crashes afterward—even if the stock moved in your favor. Our <strong>IV crush simulator</strong> shows how much you'd lose if volatility drops 20%, 40%, or 60%, so you're never surprised.</p>
+              
+              <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.95rem', fontWeight: 700, color: '#1f2937' }}>Risk Management: The 2% Rule</h4>
+              <p style={{ margin: '0 0 0rem 0' }}>Professional traders never risk more than 2% of their account per trade. Our calculator automatically sizes your position so you stay within this limit—protecting your capital while you execute your thesis.</p>
             </div>
           </div>
         ) : (
