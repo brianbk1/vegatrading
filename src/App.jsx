@@ -126,30 +126,39 @@ export default function DayTradingApp() {
       const totalMaxGain = contractsToTrade * maxGainPerContract;
       
       // EXIT STRATEGY
-      const profitTarget = Math.abs(delta * 5);
+      const profitTargetPriceMove = 5; // $5 move target
+      const profitTargetDollarAmount = Math.abs(delta * profitTargetPriceMove * 100); // Delta * Price Move * 100 shares
       const stopLoss = optionPriceNum * 0.20;
-      const thetaDailyDecay = Math.abs(theta);
+      const stopLossDollarAmount = stopLoss * 100; // Per contract
+      const thetaDailyDecay = Math.abs(theta * 100); // Per contract per day
       const daysUntilReassess = Math.max(3, Math.floor(daysNum * 0.15));
       const reassessDate = new Date();
       reassessDate.setDate(reassessDate.getDate() + daysUntilReassess);
       
+      const targetPrice = (optionType === 'call' 
+        ? currentPriceNum + profitTargetPriceMove 
+        : currentPriceNum - profitTargetPriceMove).toFixed(2);
+      
       let exitStrategy = [
         {
           rule: '🎯 PROFIT TARGET',
-          trigger: `Stock moves $${(profitTarget / Math.abs(delta)).toFixed(2)} in your favor (approx $${profitTarget.toFixed(2)} gain)`,
-          action: 'EXIT IMMEDIATELY - lock in profits, don\'t be greedy',
+          trigger: `${ticker} moves to $${targetPrice} (${optionType === 'call' ? 'up' : 'down'} $${profitTargetPriceMove})`,
+          plainEnglish: `When ${ticker} reaches $${targetPrice}, your option contract will be worth approximately $${profitTargetDollarAmount.toFixed(0)} more. That's your profit target.`,
+          action: 'SELL immediately and lock in the profit. Do not wait for more gains.',
           priority: 'PRIMARY'
         },
         {
           rule: '🛑 STOP LOSS',
-          trigger: `Position loses $${stopLoss.toFixed(2)} (20% of premium paid)`,
-          action: 'CUT LOSSES - don\'t hope it comes back',
+          trigger: `Your option loses $${stopLossDollarAmount.toFixed(0)} (20% of premium paid)`,
+          plainEnglish: `If your option drops to $${(optionPriceNum - stopLoss).toFixed(2)} or lower, you've lost 20% of what you paid. That's your maximum loss threshold.`,
+          action: 'CLOSE the trade immediately. Do not hope it comes back—cut losses here.',
           priority: 'CRITICAL'
         },
         {
           rule: '⏰ REASSESS BY DATE',
           trigger: `${reassessDate.toLocaleDateString()} (${daysUntilReassess} days from now)`,
-          action: 'If not profitable yet, exit and re-enter after pullback',
+          plainEnglish: `If your trade isn't profitable by ${reassessDate.toLocaleDateString()}, close it and step back. You can re-enter after a pullback if the thesis is still valid.`,
+          action: 'If not in profit: EXIT and reassess. If in profit: Still consider taking it.',
           priority: 'IMPORTANT'
         }
       ];
@@ -157,8 +166,9 @@ export default function DayTradingApp() {
       if (thetaDailyDecay > 0.05) {
         exitStrategy.push({
           rule: '⚡ THETA DECAY WARNING',
-          trigger: `Losing ~$${thetaDailyDecay.toFixed(2)}/day to time decay`,
-          action: 'Act FAST - don\'t hold into expiration week',
+          trigger: `You lose ~$${thetaDailyDecay.toFixed(0)} per contract every day (time decay)`,
+          plainEnglish: `Every single day that passes, your option loses $${thetaDailyDecay.toFixed(0)} in value—even if the stock doesn't move. The closer to expiration, the faster you lose money.`,
+          action: 'Do NOT hold this option into the final week. If you\'re not profitable soon, exit and move on.',
           priority: 'WATCH'
         });
       }
@@ -263,15 +273,15 @@ export default function DayTradingApp() {
           plainEnglishVerdict += `The technicals don't strongly support you, so be extra careful.`;
         }
       } else {
-        plainEnglishVerdict = `This is a ${optionType.toUpperCase()} option (${optionType === 'call' ? 'you profit if stock GOES UP' : 'you profit if stock GOES DOWN'}). This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. `;
-        if (riskRewardRatio > 0.5) {
-          plainEnglishVerdict += `Unless you have a very specific catalyst (earnings, major news), skip this and wait for a better opportunity.`;
+        // OTM option - for day traders, focus on move potential not expiration value
+        if (optionType === 'call' && strikeNum > currentPriceNum) {
+          plainEnglishVerdict = `This is an OTM ${optionType.toUpperCase()} option—you're buying it cheap ($${maxRiskPerContract}) betting on ${ticker} to rally. Max profit at expiration is $0, BUT every dollar it moves toward your strike = $${Math.abs(delta * 100).toFixed(0)} gain. Use the "Day Trading Profit Potential" chart above to see your real profit if the move happens. ${rsiScore > 70 ? `RSI is overbought (${rsiScore})—wait for a pullback.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days—plenty of time for your move.`;
+        } else if (optionType === 'put' && strikeNum < currentPriceNum) {
+          plainEnglishVerdict = `This is an OTM ${optionType.toUpperCase()} option—you're buying it cheap ($${maxRiskPerContract}) betting on ${ticker} to drop. Max profit at expiration is $0, BUT every dollar it moves down toward your strike = $${Math.abs(delta * 100).toFixed(0)} gain. Use the "Day Trading Profit Potential" chart above to see your real profit if the move happens. ${rsiScore < 30 ? `RSI is oversold (${rsiScore})—wait for a bounce first.` : `RSI is neutral—good entry if thesis is solid.`} You have ${daysNum} days—plenty of time for your move.`;
         } else {
-          plainEnglishVerdict += `This is a bad trade. Avoid it and find a better strike or option price.`;
+          plainEnglishVerdict = `This is a WEAK trade setup. You're risking $${maxRiskPerContract} but can only make $${maxGainPerContract}—that's losing money. Unless you have a very specific catalyst (earnings, major news), skip this and wait for a better opportunity.`;
         }
       }
-      plainEnglishVerdict += ` You have ${daysNum} day(s) before expiration, so time is `;
-      plainEnglishVerdict += daysNum <= 1 ? `running out FAST—expect rapid price decay.` : daysNum <= 7 ? `limited—decay is accelerating.` : `on your side—you have breathing room.`;
       plainEnglishVerdict += ` Exit by ${reassessDate.toLocaleDateString()} or reassess.`;
       
       const ivCrushImpact = [
@@ -501,14 +511,39 @@ export default function DayTradingApp() {
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>🎯 EXIT STRATEGY</h2>
             {analysisResult.exitStrategy && analysisResult.exitStrategy.map((rule, idx) => (
               <div key={idx} style={{ background: rule.priority === 'CRITICAL' ? '#fee2e2' : rule.priority === 'PRIMARY' ? '#ecfdf5' : rule.priority === 'IMPORTANT' ? '#fffbeb' : '#f0f9ff', border: `2px solid ${rule.priority === 'CRITICAL' ? '#dc2626' : rule.priority === 'PRIMARY' ? '#10b981' : rule.priority === 'IMPORTANT' ? '#f59e0b' : '#3b82f6'}`, borderRadius: '8px', padding: '1.5rem', marginBottom: '1rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 700, color: rule.priority === 'CRITICAL' ? '#dc2626' : rule.priority === 'PRIMARY' ? '#047857' : rule.priority === 'IMPORTANT' ? '#92400e' : '#1e40af' }}>{rule.rule}</h4>
-                <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}><strong>Trigger:</strong> {rule.trigger}</p>
-                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600 }}><strong>Action:</strong> {rule.action}</p>
+                <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', fontWeight: 700, color: rule.priority === 'CRITICAL' ? '#dc2626' : rule.priority === 'PRIMARY' ? '#047857' : rule.priority === 'IMPORTANT' ? '#92400e' : '#1e40af' }}>{rule.rule}</h4>
+                <div style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid', borderColor: rule.priority === 'CRITICAL' ? '#fca5a5' : rule.priority === 'PRIMARY' ? '#86efac' : rule.priority === 'IMPORTANT' ? '#fcd34d' : '#bfdbfe', borderRadius: '6px', padding: '0.75rem', marginBottom: '0.75rem' }}>
+                  <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#374151' }}><strong>When:</strong> {rule.trigger}</p>
+                  {rule.plainEnglish && (
+                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', lineHeight: '1.5', color: '#1f2937', fontStyle: 'italic' }}>💬 <strong>In other words:</strong> {rule.plainEnglish}</p>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: rule.priority === 'CRITICAL' ? '#7f1d1d' : rule.priority === 'PRIMARY' ? '#065f46' : rule.priority === 'IMPORTANT' ? '#78350f' : '#1e3a8a' }}><strong>Your action:</strong> {rule.action}</p>
               </div>
             ))}
 
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>📊 What-If Simulator</h2>
-            <WhatIfSimulator analysisResult={analysisResult} />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>💰 Day Trading Profit Potential</h2>
+            <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#1e40af', fontWeight: 600 }}>📊 Slide to see your expected profit based on when the stock moves. This is YOUR real profit potential for day trading.</p>
+              <WhatIfSimulator analysisResult={analysisResult} />
+            </div>
+
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>⚡ IV Crush Impact (Volatility Risk) - THEORETICAL</h2>
+            <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#92400e' }}>
+              <strong>⚠️ IMPORTANT:</strong> These are <strong>theoretical calculations based on estimated Vega</strong>, NOT real broker data. Vega is estimated from our formula, not from actual market volatility surfaces. Your actual losses may differ significantly. <strong>Always verify with your broker's Greeks before trading.</strong>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              {analysisResult.ivCrushImpact.map((scenario, idx) => (
+                <div key={idx} style={{ background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: '6px', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9a3412', marginBottom: '0.5rem' }}>If IV drops {scenario.label.match(/\(.*\)/)[0]}</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#dc2626', marginBottom: '0.25rem' }}>${scenario.newPrice}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#7c2d12' }}>Theoretical loss: ${scenario.loss}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '1rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#1e40af', lineHeight: '1.6' }}>
+              <strong>💡 What This Means for You:</strong> {analysisResult.ivCrushSummary} This is <strong>one of the biggest risks for option buyers</strong>. If implied volatility collapses after earnings or major news, your option loses value even if the stock moves in your direction. Watch for earnings dates and Fed announcements!
+            </div>
 
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>Analysis Results</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
