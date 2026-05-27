@@ -59,6 +59,8 @@ export default async function handler(req, res) {
       console.log(`[Polygon] 🔍 Fetching price for TICKER: ${ticker}`);
       let currentPrice = 100;
       let lastClose = 100;
+      let dayHigh = 100;
+      let dayLow = 100;
       
       // Get current price from Polygon (latest available)
       try {
@@ -75,7 +77,9 @@ export default async function handler(req, res) {
             const data = await res.json();
             if (data.close && data.close > 0) {
               currentPrice = data.close;
-              console.log(`[Polygon] ✅ Got current price for ${ticker} on ${dateStr}: $${currentPrice}`);
+              dayHigh = data.high;
+              dayLow = data.low;
+              console.log(`[Polygon] ✅ Got price for ${ticker} on ${dateStr}: close=$${currentPrice}, high=$${dayHigh}, low=$${dayLow}`);
               break;
             }
           }
@@ -108,8 +112,8 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Last close fetch failed:', err.message);
       }
       
-      console.log(`[Polygon] 🔍 Final result for ${ticker}: current=$${currentPrice}, lastClose=$${lastClose}`);
-      return res.status(200).json({ currentPrice, lastClose, ticker });
+      console.log(`[Polygon] 🔍 Final result for ${ticker}: high=$${dayHigh}, low=$${dayLow}, close=$${currentPrice}, lastClose=$${lastClose}`);
+      return res.status(200).json({ currentPrice, lastClose, ticker, high: dayHigh, low: dayLow });
     }
 
     // ========== FETCH EXPIRATIONS ==========

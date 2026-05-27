@@ -4,6 +4,8 @@ export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
   const [currentPrice, setCurrentPrice] = useState(null);
   const [lastClosePrice, setLastClosePrice] = useState(null);
+  const [dayHigh, setDayHigh] = useState(null);
+  const [dayLow, setDayLow] = useState(null);
   const [tickerFetchInProgress, setTickerFetchInProgress] = useState(false);
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
@@ -48,9 +50,11 @@ export default function DayTradingApp() {
       console.log(`🔍 RECEIVED response:`, data);
       
       if (data.ticker === upperTicker && data.currentPrice && data.currentPrice > 1) {
-        console.log(`🔍 SETTING prices - current: $${data.currentPrice}, lastClose: $${data.lastClose}`);
+        console.log(`🔍 SETTING prices - high: $${data.high}, low: $${data.low}, close: $${data.lastClose}`);
         setCurrentPrice(data.currentPrice);
         setLastClosePrice(data.lastClose);
+        setDayHigh(data.high);
+        setDayLow(data.low);
       } else if (data.ticker !== upperTicker) {
         console.log(`🔍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
         setError(`Price fetch returned wrong ticker: ${data.ticker}`);
@@ -369,12 +373,18 @@ export default function DayTradingApp() {
                   {tickerFetchInProgress ? '⏳ Checking...' : '💵 Check Price'}
                 </button>
               </div>
-              {(currentPrice && currentPrice > 1) || (lastClosePrice && lastClosePrice > 1) ? (
-                <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600, background: '#fef3c7', padding: '1rem', borderRadius: '6px', border: '1px solid #fcd34d', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  {currentPrice && currentPrice > 1 && (
+              {(lastClosePrice && lastClosePrice > 1) ? (
+                <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600, background: '#fef3c7', padding: '1rem', borderRadius: '6px', border: '1px solid #fcd34d', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  {dayHigh && dayHigh > 1 && (
                     <div style={{ color: '#047857' }}>
-                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>💵 Current</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>${currentPrice.toFixed(2)}</div>
+                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>📈 Day High</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#10b981' }}>${dayHigh.toFixed(2)}</div>
+                    </div>
+                  )}
+                  {dayLow && dayLow > 1 && (
+                    <div style={{ color: '#047857' }}>
+                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>📉 Day Low</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>${dayLow.toFixed(2)}</div>
                     </div>
                   )}
                   {lastClosePrice && lastClosePrice > 1 && (
