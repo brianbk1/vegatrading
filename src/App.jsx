@@ -334,10 +334,10 @@ export default function DayTradingApp() {
   return (
     <div style={{ background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1f2937' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '2.5rem', fontWeight: 700 }}>⚡ Vega Day Trading Analyzer</h1>
-        <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1rem', color: '#4b5563', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto 2rem' }}>
+        <h1 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700 }}>⚡ Vega Day Trading Analyzer</h1>
+        <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: 'clamp(0.9rem, 2vw, 1rem)', color: '#4b5563', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto 2rem', padding: '0 1rem' }}>
           <p style={{ margin: '0 0 1rem 0' }}>Free <strong>options day trading calculator</strong> with real-time <strong>delta and theta calculator</strong>, <strong>IV crush impact simulator</strong>, and automated exit strategy rules.</p>
-          <p style={{ margin: 0, fontSize: '0.95rem', color: '#6b7280' }}>Analyze your <strong>options trades</strong> in seconds. See expected profit at any price move, manage risk with the 2% rule, and trade with confidence.</p>
+          <p style={{ margin: 0, fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: '#6b7280' }}>Analyze your <strong>options trades</strong> in seconds. See expected profit at any price move, manage risk with the 2% rule, and trade with confidence.</p>
         </div>
 
         {!analysisResult ? (
@@ -488,7 +488,7 @@ export default function DayTradingApp() {
             
             <div style={{ background: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#1e40af' }}>What You Get:</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem', color: '#1f2937' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: 'clamp(0.85rem, 2vw, 0.9rem)', color: '#1f2937' }}>
                 <div>✅ <strong>Real-time Greeks</strong> (Delta, Gamma, Theta, Vega)</div>
                 <div>✅ <strong>IV Crush simulator</strong> (volatility risk)</div>
                 <div>✅ <strong>Day trading profit potential</strong> at any price</div>
@@ -604,6 +604,31 @@ export default function DayTradingApp() {
               <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', color: analysisResult.overallScore > 75 ? '#047857' : analysisResult.overallScore > 60 ? '#b45309' : '#991b1b' }}>
                 {analysisResult.plainEnglishVerdict}
               </p>
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⚡ The Greeks (Advanced)</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Delta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.delta}</div><div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>+${(parseFloat(analysisResult.delta) * 100).toFixed(0)}/move</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Gamma</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ff8c42' }}>{analysisResult.gamma}</div><div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Acceleration</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Theta</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>{analysisResult.theta}</div><div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Daily decay</div></div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Vega</div><div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#059669' }}>{analysisResult.vega}</div><div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>IV impact</div></div>
+            </div>
+
+            {analysisResult.userThesis && (
+              <div style={{ background: '#f3f4f6', border: '2px solid #9ca3af', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#374151' }}>📌 Your Thesis</h3>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#4b5563', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>{analysisResult.userThesis}</p>
+                <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', fontWeight: 700 }}>Catalyst Analysis</h4>
+                  <div style={{ fontSize: '0.85rem', color: '#374151', whiteSpace: 'pre-wrap' }}>{analysisResult.thesisAnalysis}</div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>📰 This Week's Market Events</h3>
+              <div style={{ fontSize: '0.85rem', color: '#78350f', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{analysisResult.weeklyEvents}</div>
+              <div style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '1rem', fontStyle: 'italic' }}>💡 Tip: Economic events and earnings can cause IV spikes and gaps. Plan your exits accordingly.</div>
             </div>
 
             <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
