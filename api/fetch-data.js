@@ -2,17 +2,14 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
   const { claudeChat, tradeContext, userMessage, ticker, strikePrice, daysToExpiry, optionPrice, expiryDate, fetchExpirations, fetchStrikes, getPrice, optionType, currentPrice } = req.body;
   const polygonKey = process.env.POLYGON_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-
   // ========== CLAUDE CHAT ENDPOINT ==========
   if (claudeChat && userMessage && tradeContext) {
     if (!anthropicKey) {
       return res.status(500).json({ error: 'Missing ANTHROPIC_API_KEY' });
     }
-
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -32,13 +29,11 @@ export default async function handler(req, res) {
           ]
         })
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error('[Claude API Error]', errorData);
         return res.status(response.status).json({ error: errorData.error?.message || 'Claude API error' });
       }
-
       const data = await response.json();
       const assistantMessage = data.content[0]?.text || 'Unable to get response';
       
@@ -48,11 +43,9 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: `Claude chat error: ${err.message}` });
     }
   }
-
   if (!polygonKey) {
     return res.status(500).json({ error: 'Missing POLYGON_API_KEY' });
   }
-
   try {
     // ========== GET PRICE FROM POLYGON ==========
     if (getPrice && ticker) {
@@ -88,9 +81,9 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Current price fetch failed:', err.message);
       }
       
-      // Get VXN (Nasdaq Volatility Index) - Using default, not from Polygon (not available)
-      // VXN defaults to 18 (neutral level) - users can adjust in simulator
-      const vxnCurrent = 18;
+      // Get last close (previous trading day)
+      try {
+        console.log('[Polygon] 🔍 Fetching last close...');
         for (let daysBack = 1; daysBack <= 5; daysBack++) {
           const date = new Date();
           date.setDate(date.getDate() - daysBack);
@@ -112,10 +105,12 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Last close fetch failed:', err.message);
       }
       
+      // VXN defaults to 18 (neutral level) - users can adjust in simulator
+      const vxnCurrent = 18;
+      
       console.log(`[Polygon] 🔍 Final result for ${ticker}: high=$${dayHigh}, low=$${dayLow}, close=$${currentPrice}, lastClose=$${lastClose}, vxn=$${vxnCurrent}`);
       return res.status(200).json({ currentPrice, lastClose, ticker, high: dayHigh, low: dayLow, vxn: vxnCurrent || 18 });
     }
-
     // ========== FETCH EXPIRATIONS ==========
     if (fetchExpirations && ticker) {
       console.log(`[Polygon] Fetching expirations for ${ticker}`);
@@ -189,7 +184,6 @@ export default async function handler(req, res) {
       
       return res.status(200).json({ expirations: [], ticker });
     }
-
     // ========== FETCH STRIKES FOR EXPIRATION ==========
     if (fetchStrikes && ticker && expiryDate) {
       console.log(`[Polygon] Fetching strikes for ${ticker} expiring ${expiryDate}`);
@@ -240,12 +234,10 @@ export default async function handler(req, res) {
         dataSource: optionsChain.length > 0 ? 'polygon' : 'fallback'
       });
     }
-
     // ========== ANALYZE TRADE ==========
     if (!strikePrice || !optionPrice) {
       return res.status(400).json({ error: 'Strike price and option price required' });
     }
-
     console.log(`[Backend] 🚀 ANALYZE called with: ticker=${ticker}, currentPrice=${currentPrice}, strikePrice=${strikePrice}`);
     
     let lastClose = currentPrice || 100;
@@ -293,7 +285,6 @@ export default async function handler(req, res) {
     } else {
       console.log(`[Backend] Using currentPrice from frontend: $${currentPrice}`);
     }
-
     let data = {
       ticker,
       lastClose,
@@ -304,13 +295,11 @@ export default async function handler(req, res) {
       ivPercentile: 50,
       dataSource: 'fallback'
     };
-
     // Try Polygon RSI
     try {
       const rsiRes = await fetch(
         `https://api.polygon.io/v1/indicators/rsi/${ticker}?timespan=day&window=14&series_type=close&long_window=26&short_window=12&signal_window=9&apikey=${polygonKey}`
       );
-
       if (rsiRes.ok) {
         const rsiData = await rsiRes.json();
         if (rsiData.results && rsiData.results.values && rsiData.results.values.length > 0) {
@@ -324,13 +313,11 @@ export default async function handler(req, res) {
     } catch (err) {
       console.log('[Polygon] RSI fetch error');
     }
-
     // Try Polygon MACD
     try {
       const macdRes = await fetch(
         `https://api.polygon.io/v1/indicators/macd/${ticker}?timespan=day&short_window=12&long_window=26&signal_window=9&apikey=${polygonKey}`
       );
-
       if (macdRes.ok) {
         const macdData = await macdRes.json();
         if (macdData.results && macdData.results.values && macdData.results.values.length > 0) {
@@ -342,11 +329,9 @@ export default async function handler(req, res) {
     } catch (err) {
       console.log('[Polygon] MACD fetch error');
     }
-
     // Stochastic estimate based on RSI
     data.stochasticK = Math.round((data.rsi14 + 50) / 2);
     data.ivPercentile = 50;
-
     res.status(200).json(data);
   } catch (err) {
     console.error('[Error]', err);
