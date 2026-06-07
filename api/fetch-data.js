@@ -88,33 +88,9 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Current price fetch failed:', err.message);
       }
       
-      // Get VXN (Nasdaq Volatility Index) - OPTIONAL, use fallback if fails
-      let vxnCurrent = 18; // Default fallback
-      
-      try {
-        console.log('[Polygon] 🔍 Fetching VXN data...');
-        const vxnRes = await fetch(
-          `https://api.polygon.io/v1/open-close/VXN/${new Date().toISOString().split('T')[0]}?apikey=${polygonKey}`
-        );
-        if (vxnRes.ok) {
-          try {
-            const vxnData = await vxnRes.json();
-            if (vxnData.close && vxnData.close > 0) {
-              vxnCurrent = vxnData.close;
-              console.log(`[Polygon] ✅ Got VXN: ${vxnCurrent}`);
-            }
-          } catch (parseErr) {
-            console.log('[Polygon] ⚠️ VXN JSON parse failed, using default:', parseErr.message);
-            vxnCurrent = 18;
-          }
-        } else {
-          console.log('[Polygon] ⚠️ VXN endpoint returned:', vxnRes.status);
-          vxnCurrent = 18;
-        }
-      } catch (err) {
-        console.log('[Polygon] ⚠️ VXN fetch failed (optional):', err.message);
-        vxnCurrent = 18;
-      }
+      // Get VXN (Nasdaq Volatility Index) - Using default, not from Polygon (not available)
+      // VXN defaults to 18 (neutral level) - users can adjust in simulator
+      const vxnCurrent = 18;
         for (let daysBack = 1; daysBack <= 5; daysBack++) {
           const date = new Date();
           date.setDate(date.getDate() - daysBack);
