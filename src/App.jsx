@@ -6,6 +6,7 @@ export default function DayTradingApp() {
   const [lastClosePrice, setLastClosePrice] = useState(null);
   const [dayHigh, setDayHigh] = useState(null);
   const [dayLow, setDayLow] = useState(null);
+  const [vxnPrice, setVxnPrice] = useState(null);
   const [tickerFetchInProgress, setTickerFetchInProgress] = useState(false);
   const [strikePrice, setStrikePrice] = useState('');
   const [optionPrice, setOptionPrice] = useState('');
@@ -50,11 +51,12 @@ export default function DayTradingApp() {
       console.log(`🔍 RECEIVED response:`, data);
       
       if (data.ticker === upperTicker && data.currentPrice && data.currentPrice > 1) {
-        console.log(`🔍 SETTING prices - high: $${data.high}, low: $${data.low}, close: $${data.lastClose}`);
+        console.log(`🔍 SETTING prices - high: $${data.high}, low: $${data.low}, close: $${data.lastClose}, vxn: ${data.vxn}`);
         setCurrentPrice(data.currentPrice);
         setLastClosePrice(data.lastClose);
         setDayHigh(data.high);
         setDayLow(data.low);
+        setVxnPrice(data.vxn || 18);
       } else if (data.ticker !== upperTicker) {
         console.log(`🔍 IGNORING response: ticker mismatch (expected ${upperTicker}, got ${data.ticker})`);
         setError(`Price fetch returned wrong ticker: ${data.ticker}`);
@@ -309,6 +311,7 @@ export default function DayTradingApp() {
         totalMaxRisk: totalMaxRisk.toFixed(2), totalMaxGain: totalMaxGain.toFixed(2), thesisStatement, plainEnglishVerdict, userThesis, thesisAnalysis, ivCrushImpact,
         technicalSummary, riskRewardSummary, dteSummaryFull, ivCrushSummary,
         exitStrategy, reassessDate: reassessDate.toLocaleDateString(),
+        vxnPrice: vxnPrice || 18, vxnLevel: vxnPrice >= 25 ? 'High' : vxnPrice >= 20 ? 'Elevated' : vxnPrice >= 15 ? 'Normal' : 'Low',
         weeklyEvents: `📅 ECONOMIC CALENDAR:\n🔴 CPI - Wednesday 8:30 AM\n🟠 Jobless Claims - Thursday 8:30 AM\n🟠 Retail Sales - Friday 8:30 AM\n\n💼 EARNINGS:\n📊 NVDA - Aug 26 (After Hours)\n📊 MSFT - Jul 29 (After Hours)\n📊 TSLA - Jul 21 (After Hours)\n📊 META - Jul 30 (After Hours)\n📊 AAPL - Aug 1 (After Hours)\n📊 GOOGL - Jul 29 (After Hours)`
       });
     } catch (err) {
@@ -568,6 +571,49 @@ export default function DayTradingApp() {
               </div>
             ))}
 
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #00c8c8', paddingBottom: '0.5rem' }}>📊 VXN Analysis (Volatility & Premium Impact)</h2>
+            <div style={{ background: '#ecfdf5', border: '2px solid #10b981', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, marginBottom: '0.5rem' }}>CURRENT VXN</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 700, color: analysisResult.vxnPrice >= 25 ? '#ef4444' : analysisResult.vxnPrice >= 20 ? '#f59e0b' : '#10b981' }}>
+                    {analysisResult.vxnPrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.5rem' }}>{analysisResult.vxnLevel}</div>
+                </div>
+                
+                <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, marginBottom: '0.5rem' }}>VEGA (IV Sensitivity)</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#00c8c8' }}>{analysisResult.vega}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.5rem' }}>Per 1% IV move</div>
+                </div>
+                
+                <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, marginBottom: '0.5rem' }}>IV PERCENTILE</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#8b5cf6' }}>{ivPercentile}%</div>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.5rem' }}>vs 52-week range</div>
+                </div>
+              </div>
+
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#047857' }}>
+                <strong>📈 Current Environment:</strong><br/>
+                {analysisResult.vxnPrice >= 25 ? '🔴 HIGH volatility - Great for selling options, premium is elevated, but watch for sudden drops.' : analysisResult.vxnPrice >= 20 ? '🟠 ELEVATED volatility - Good premium environment, IV may stabilize soon.' : analysisResult.vxnPrice >= 15 ? '🟡 NORMAL volatility - Balanced risk/reward, no extreme advantage for either side.' : '🟢 LOW volatility - Limited premium, favorable for buyers but sellers get squeezed.'} 
+              </div>
+
+              <div style={{ background: 'white', border: '1px solid #86efac', borderRadius: '6px', padding: '1rem', fontSize: '0.85rem', color: '#374151' }}>
+                <strong>💡 Impact on Your Trade:</strong><br/>
+                {analysisResult.vxnLevel === 'High' ? (
+                  <>✅ <strong>ADVANTAGE:</strong> High VXN means high premiums. Your option is worth more. If you're selling, great. If buying, you're overpaying—use the simulator below to test break-evens.</>
+                ) : analysisResult.vxnLevel === 'Elevated' ? (
+                  <>✅ <strong>GOOD:</strong> Elevated VXN gives you room for IV crush profit if VXN drops, or IV expansion gain if it rises. Balanced.</>
+                ) : analysisResult.vxnLevel === 'Normal' ? (
+                  <>⚠️ <strong>NEUTRAL:</strong> Normal VXN means IV is stable. Focus on delta (directional) gains/losses. Less IV surprise upside/downside.</>
+                ) : (
+                  <>⚠️ <strong>RISK:</strong> Low VXN means premiums are cheap but offer little cushion. IV expansion is unlikely; theta decay works against you if direction doesn't move fast.</>
+                )}
+              </div>
+            </div>
+
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>💰 Day Trading Profit Potential</h2>
             <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
               <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#1e40af', fontWeight: 600 }}>📊 Slide to see your expected profit based on when the stock moves. This is YOUR real profit potential for day trading.</p>
@@ -799,26 +845,32 @@ function WhatIfSimulator({ analysisResult }) {
   const [simulatedDaysLeft, setSimulatedDaysLeft] = React.useState(analysisResult.daysToExpiry);
   const [numContracts, setNumContracts] = React.useState(1);
   const [costBasisPerContract, setCostBasisPerContract] = React.useState(analysisResult.optionPrice);
+  const [simulatedVxnPrice, setSimulatedVxnPrice] = React.useState(analysisResult.vxnPrice || 18);
   
   const delta = parseFloat(analysisResult.delta);
   const theta = parseFloat(analysisResult.theta);
+  const vega = parseFloat(analysisResult.vega);
   const currentPrice = analysisResult.lastClose;
   const optionPrice = analysisResult.optionPrice;
+  const currentVxn = analysisResult.vxnPrice || 18;
   
   const priceMove = simulatedPrice - currentPrice;
   const daysDecayed = analysisResult.daysToExpiry - simulatedDaysLeft;
+  const vxnMove = simulatedVxnPrice - currentVxn;
   
   const deltaGainPerContract = delta * priceMove;
   const thetaLossPerContract = theta * daysDecayed;
-  const expectedGainPerContract = deltaGainPerContract + thetaLossPerContract;
+  const vegaGainPerContract = vega * vxnMove; // Vega gain from VXN change
+  const expectedGainPerContract = deltaGainPerContract + thetaLossPerContract + vegaGainPerContract;
   const newOptionPricePerContract = optionPrice + expectedGainPerContract;
   const profitLossPerContract = newOptionPricePerContract - optionPrice;
   
   // Total position calculations
-  const totalCostBasis = costBasisPerContract * numContracts * 100; // *100 for contract multiplier
+  const totalCostBasis = costBasisPerContract * numContracts * 100;
   const totalDeltaGain = deltaGainPerContract * numContracts * 100;
   const totalThetaLoss = thetaLossPerContract * numContracts * 100;
-  const totalPnL = (totalDeltaGain + totalThetaLoss).toFixed(2);
+  const totalVegaGain = vegaGainPerContract * numContracts * 100;
+  const totalPnL = (totalDeltaGain + totalThetaLoss + totalVegaGain).toFixed(2);
   const totalROI = totalCostBasis > 0 ? ((totalPnL / totalCostBasis) * 100).toFixed(2) : '0.00';
   
   const isProfit = parseFloat(totalPnL) > 0;
@@ -855,13 +907,13 @@ function WhatIfSimulator({ analysisResult }) {
         </div>
       </div>
 
-      {/* Price/Days Sliders */}
+      {/* Price/Days/VXN Sliders */}
       <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem' }}>
-        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#1e40af', fontWeight: 600 }}>📈 Slide to simulate different stock prices and dates:</p>
+        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#1e40af', fontWeight: 600 }}>📈 Simulate different scenarios - adjust price, days remaining, AND VXN:</p>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e40af' }}>Stock Price Target ($)</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e40af' }}>Stock Price ($)</label>
             <input 
               type="range" 
               value={simulatedPrice} 
@@ -892,28 +944,53 @@ function WhatIfSimulator({ analysisResult }) {
               <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>({daysDecayed} decayed)</span>
             </div>
           </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#059669' }}>VXN Level</label>
+            <input 
+              type="range" 
+              value={simulatedVxnPrice}
+              onChange={(e) => setSimulatedVxnPrice(parseFloat(e.target.value))}
+              min="10"
+              max="50"
+              step="0.5"
+              style={{ width: '100%', cursor: 'pointer' }}
+            />
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '0.5rem' }}>
+              <span style={{ color: '#059669' }}>{simulatedVxnPrice.toFixed(2)}</span>
+              <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>({vxnMove > 0 ? '+' : ''}${vxnMove.toFixed(2)})</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* P&L Results */}
+      {/* P&L Results with Vega */}
       <div style={{ background: isProfit ? '#ecfdf5' : '#fef2f2', border: `2px solid ${isProfit ? '#10b981' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem' }}>
         <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: 700, color: isProfit ? '#047857' : '#991b1b' }}>💰 Your Position P&L ({numContracts} contracts)</h4>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>DELTA GAIN</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: totalDeltaGain >= 0 ? '#10b981' : '#ef4444' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: totalDeltaGain >= 0 ? '#10b981' : '#ef4444' }}>
               ${totalDeltaGain.toFixed(2)}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>δ {delta.toFixed(2)} × ${priceMove.toFixed(2)}</div>
+            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Price move</div>
           </div>
           
           <div>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>THETA LOSS</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: totalThetaLoss >= 0 ? '#10b981' : '#ef4444' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: totalThetaLoss >= 0 ? '#10b981' : '#ef4444' }}>
               ${totalThetaLoss.toFixed(2)}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>θ {theta.toFixed(4)} × {daysDecayed}d</div>
+            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>Time decay</div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>VEGA GAIN</div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, color: totalVegaGain >= 0 ? '#10b981' : '#ef4444' }}>
+              ${totalVegaGain.toFixed(2)}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.25rem' }}>VXN change</div>
           </div>
         </div>
         
@@ -942,7 +1019,7 @@ function WhatIfSimulator({ analysisResult }) {
       </div>
 
       <div style={{ fontSize: '0.8rem', color: '#6b7280', padding: '1rem', background: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
-        <strong>💡 How to use:</strong> Enter your number of contracts and cost basis per contract. Then slide the price/days to see your real P&L for that scenario.
+        <strong>💡 Pro Tip:</strong> If Fed signals higher rates (VXN spikes), slide VXN up to see the IV expansion gain. If relief rally happens (VXN drops), slide it down to see IV crush impact.
       </div>
     </div>
   );

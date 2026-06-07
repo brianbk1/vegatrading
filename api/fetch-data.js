@@ -88,9 +88,29 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Current price fetch failed:', err.message);
       }
       
-      // Get last close (previous trading day)
+      // Get VXN (Nasdaq Volatility Index)
+      let vxnCurrent = null;
+      let vxnHigh52 = null;
+      let vxnLow52 = null;
+      let vxnHistoricalAvg = 18; // Default historical avg
+      
       try {
-        console.log('[Polygon] 🔍 Fetching last close...');
+        console.log('[Polygon] 🔍 Fetching VXN data...');
+        // Get current VXN
+        const vxnRes = await fetch(
+          `https://api.polygon.io/v1/open-close/VXN/${new Date().toISOString().split('T')[0]}?apikey=${polygonKey}`
+        );
+        if (vxnRes.ok) {
+          const vxnData = await vxnRes.json();
+          if (vxnData.close) {
+            vxnCurrent = vxnData.close;
+            console.log(`[Polygon] ✅ Got VXN: ${vxnCurrent}`);
+          }
+        }
+      } catch (err) {
+        console.log('[Polygon] ⚠️ VXN fetch failed (optional):', err.message);
+        vxnCurrent = 18; // Fallback
+      }
         for (let daysBack = 1; daysBack <= 5; daysBack++) {
           const date = new Date();
           date.setDate(date.getDate() - daysBack);
@@ -112,8 +132,8 @@ export default async function handler(req, res) {
         console.log('[Polygon] ❌ Last close fetch failed:', err.message);
       }
       
-      console.log(`[Polygon] 🔍 Final result for ${ticker}: high=$${dayHigh}, low=$${dayLow}, close=$${currentPrice}, lastClose=$${lastClose}`);
-      return res.status(200).json({ currentPrice, lastClose, ticker, high: dayHigh, low: dayLow });
+      console.log(`[Polygon] 🔍 Final result for ${ticker}: high=$${dayHigh}, low=$${dayLow}, close=$${currentPrice}, lastClose=$${lastClose}, vxn=$${vxnCurrent}`);
+      return res.status(200).json({ currentPrice, lastClose, ticker, high: dayHigh, low: dayLow, vxn: vxnCurrent || 18 });
     }
 
     // ========== FETCH EXPIRATIONS ==========
