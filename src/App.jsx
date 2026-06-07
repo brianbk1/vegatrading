@@ -315,6 +315,7 @@ export default function DayTradingApp() {
         weeklyEvents: `📅 ECONOMIC CALENDAR:\n🔴 CPI - Wednesday 8:30 AM\n🟠 Jobless Claims - Thursday 8:30 AM\n🟠 Retail Sales - Friday 8:30 AM\n\n💼 EARNINGS:\n📊 NVDA - Aug 26 (After Hours)\n📊 MSFT - Jul 29 (After Hours)\n📊 TSLA - Jul 21 (After Hours)\n📊 META - Jul 30 (After Hours)\n📊 AAPL - Aug 1 (After Hours)\n📊 GOOGL - Jul 29 (After Hours)`
       });
     } catch (err) {
+      console.error('❌ ANALYZE ERROR:', err);
       setError('Error: ' + err.message);
     } finally {
       setIsAnalyzing(false);
@@ -590,7 +591,7 @@ export default function DayTradingApp() {
                 
                 <div style={{ background: 'white', border: '1px solid #d1d5db', borderRadius: '6px', padding: '1rem', textAlign: 'center' }}>
                   <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 600, marginBottom: '0.5rem' }}>IV PERCENTILE</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#8b5cf6' }}>{ivPercentile}%</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#8b5cf6' }}>{analysisResult.ivPercentile || 50}%</div>
                   <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '0.5rem' }}>vs 52-week range</div>
                 </div>
               </div>
