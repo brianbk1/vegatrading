@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Institutional-grade options trading analysis platform">
+  <meta name="description" content="Free options day trading calculator with delta, theta, and vega analysis, IV crush simulator, position sizing, and exit strategy rules. Educational guides on the Greeks, VXN, and trading around FOMC and earnings.">
   <meta name="google-adsense-account" content="ca-pub-5006125305468777">
-  <title>Vega Day Trading Analysis</title>
+  <title>Vega Day Trading Analyzer | Free Options Calculator, Greeks & IV Crush Simulator</title>
 
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5006125305468777" crossorigin="anonymous"></script>
@@ -18,12 +18,139 @@
     gtag('js', new Date());
     gtag('config', 'G-3V60ZZV7H9');
   </script>
-  
+
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23ff8c42' width='100' height='100' rx='20'/><text x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle'>ν</text></svg>">
-  
+
+  <style>
+    /* Static editorial content below the app */
+    #vt-static {
+      background: linear-gradient(135deg, #f0f8ff 0%, #fff8f0 100%);
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #1f2937;
+      padding: 1rem 2rem 3rem;
+    }
+    #vt-static .vt-wrap { max-width: 600px; margin: 0 auto; }
+    #vt-static article {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #374151;
+    }
+    #vt-static h2 {
+      font-size: 1.35rem;
+      color: #1e40af;
+      margin: 0 0 1rem 0;
+      border-bottom: 2px solid #ff8c42;
+      padding-bottom: 0.5rem;
+    }
+    #vt-static h3 { font-size: 1.05rem; color: #1f2937; margin: 1.25rem 0 0.5rem 0; }
+    #vt-static p { margin: 0 0 1rem 0; }
+    #vt-static p:last-child { margin-bottom: 0; }
+    #vt-static .vt-section-label {
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin: 2rem 0 1.5rem;
+    }
+    #vt-static .vt-faq-q { font-weight: 700; color: #1e40af; margin: 1.25rem 0 0.35rem 0; }
+    #vt-static .vt-faq-q:first-of-type { margin-top: 0; }
+    #vt-static footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #6b7280;
+      line-height: 1.7;
+      padding-top: 0.5rem;
+    }
+    @media (max-width: 640px) {
+      #vt-static { padding: 0.5rem 0.75rem 2rem; }
+      #vt-static article { padding: 1.25rem 1rem; }
+    }
+  </style>
 </head><body>
   <div id="root"></div>
+
+  <!-- ===== Static editorial content (visible to users and crawlers) ===== -->
+  <section id="vt-static">
+    <div class="vt-wrap">
+      <p class="vt-section-label">Options Trading Guides</p>
+
+      <article>
+        <h2>How Professional Traders Actually Use the Greeks</h2>
+        <p>Retail traders often treat the Greeks as trivia. Professionals treat them as a dashboard. Every options position is a bundle of exposures, and each Greek tells you which lever the market is pulling on your P&amp;L at any moment.</p>
+        <h3>Delta is your direction</h3>
+        <p>Delta answers the only question most day traders start with: if the stock moves a dollar, what happens to me? A 0.30 delta call gains roughly $30 per contract on a $1 rally. But delta is also a rough proxy for the probability the option finishes in the money, which is why deep out-of-the-money contracts with 0.05 deltas behave like lottery tickets — cheap, unlikely, and explosive when they hit.</p>
+        <h3>Theta is your rent</h3>
+        <p>Every day you hold a long option, you pay rent in the form of time decay. Theta is small when expiration is far away and brutal in the final week. Day traders who buy short-dated contracts are making an implicit bet: the move will happen <em>before</em> the rent consumes the premium. If your thesis needs three days and your theta bill eats the position in two, the trade fails even when the direction is right.</p>
+        <h3>Vega is your volatility exposure</h3>
+        <p>Vega measures how much the option's price changes when implied volatility moves one percentage point. It's the Greek traders discover the hard way — usually after buying calls before an earnings report, watching the stock gap up, and still losing money because implied volatility collapsed. Direction was right; volatility exposure was wrong.</p>
+        <h3>Gamma is your acceleration</h3>
+        <p>Gamma tells you how fast delta itself changes. At-the-money options close to expiration carry enormous gamma, which is why 0DTE contracts can double or halve in minutes. High gamma cuts both ways: it's the engine behind spectacular day-trading wins and equally fast losses.</p>
+      </article>
+
+      <article>
+        <h2>Trading Around Catalysts: FOMC, CPI, and Earnings</h2>
+        <p>Most large single-day moves in index products cluster around scheduled events: Federal Reserve rate decisions and minutes, CPI and jobs reports, and mega-cap earnings. These are also the moments when options pricing behaves least intuitively.</p>
+        <h3>Before the event: premium inflation</h3>
+        <p>Implied volatility rises into known catalysts because market makers charge more for uncertainty. Buying options the afternoon before an FOMC statement means paying peak premium. The stock then has to move far enough to overcome both the inflated price you paid and the volatility collapse that follows the announcement.</p>
+        <h3>After the event: IV crush</h3>
+        <p>Once the uncertainty resolves, implied volatility deflates rapidly — often within the first hour. This is IV crush, and it punishes buyers on both sides. A common pattern: an index moves 1% after a Fed decision, yet at-the-money straddles bought the day before still lose value because the volatility component fell faster than the directional component gained.</p>
+        <h3>Working with the cycle instead of against it</h3>
+        <p>Some traders wait for the event to pass and trade the follow-through move with deflated premium. Others position days earlier, before volatility fully inflates. What rarely works is buying expensive short-dated premium hours before a binary event and hoping the move outruns the crush. Simulating the volatility drop before entering — not after — is the difference between a calculated bet and a surprise.</p>
+      </article>
+
+      <article>
+        <h2>VXN vs. VIX: Why Nasdaq Traders Watch a Different Number</h2>
+        <p>The VIX gets the headlines, but it measures implied volatility on S&amp;P 500 options. Traders in QQQ and Nasdaq names watch the VXN — the same 30-day implied volatility calculation applied to the Nasdaq-100.</p>
+        <p>The two usually move together, but the gap between them is informative. Because the Nasdaq-100 is concentrated in large-cap technology, VXN typically runs several points above VIX and stretches further during tech-specific stress: chip earnings, AI-spending headlines, rate-sensitivity selloffs. When VXN spikes while VIX barely moves, the market is pricing tech-specific risk rather than broad-market risk.</p>
+        <p>As a rough map: VXN under 15 signals a calm regime with cheap premium, the high teens are normal, the low-to-mid 20s mark elevated stress where premium sellers get paid, and readings above 30 accompany genuine market fear. Buyers of options prefer entering when VXN is low and rising; sellers prefer high and falling. Buying premium when VXN is already elevated means paying fear prices — profitable only if fear keeps climbing.</p>
+      </article>
+
+      <article>
+        <h2>The Five Mistakes That End Options Day Trading Accounts</h2>
+        <h3>1. Position sizing by conviction instead of math</h3>
+        <p>The most common account-killer isn't a bad thesis — it's a normal losing trade sized ten times too large. The 2% rule exists because a string of losses is a statistical certainty, not a possibility. Risking 2% per trade means surviving ten consecutive losers with over 80% of capital intact. Risking 20% means three losers nearly halve the account.</p>
+        <h3>2. Ignoring theta on short-dated contracts</h3>
+        <p>A contract expiring in two days can lose a third of its value overnight with the stock unchanged. If the plan is "hold until it works," theta guarantees it eventually can't.</p>
+        <h3>3. Buying premium right before binary events</h3>
+        <p>Peak implied volatility is the worst inventory to buy. The move has to beat both the direction and the crush.</p>
+        <h3>4. No exit rules before entry</h3>
+        <p>Deciding what to do mid-trade, while the P&amp;L flashes red, is how small losses become large ones. Profit targets, stop levels, and a time stop belong in writing before the order fills.</p>
+        <h3>5. Averaging down on decaying assets</h3>
+        <p>Averaging down in shares is a debatable strategy; in long options it's compounding a theta problem. Every added contract pays rent, and the clock never pauses.</p>
+      </article>
+
+      <article>
+        <h2>Frequently Asked Questions</h2>
+        <p class="vt-faq-q">Is this calculator free?</p>
+        <p>Yes. The analyzer, the Greeks estimates, the IV crush simulator, and the what-if P&amp;L tool are free to use with no account required.</p>
+        <p class="vt-faq-q">Where should the option price come from?</p>
+        <p>Use the live quote from your broker — ideally the mid-point between bid and ask. Stale or wide quotes are the biggest source of inaccurate analysis.</p>
+        <p class="vt-faq-q">Are the Greeks shown here exact?</p>
+        <p>No. Unless you enter your broker's Greeks manually, the tool estimates them from price, strike, and time to expiration. Estimates are useful for planning, but always verify with your broker's chain before trading.</p>
+        <p class="vt-faq-q">What is a good analysis score?</p>
+        <p>Scores above 75 reflect setups with favorable risk/reward and supportive technicals; 60–74 is tradeable with caution; below 60 means at least one major factor — sizing, decay, volatility, or risk/reward — is working against the trade.</p>
+        <p class="vt-faq-q">Does this work for stocks other than QQQ?</p>
+        <p>Yes — any optionable US ticker. The VXN readings are most meaningful for Nasdaq-linked products, while the delta, theta, and sizing math applies to every underlying.</p>
+        <p class="vt-faq-q">Is this financial advice?</p>
+        <p>No. Everything on this site is educational and analytical. Options involve substantial risk of loss, and every trading decision is your own responsibility.</p>
+      </article>
+
+      <footer>
+        <p><strong>Vega Day Trading Analyzer</strong> — free options analysis for day traders.<br>
+        Educational content only. Not financial advice. Options trading involves substantial risk and is not suitable for every investor.<br>
+        Always verify data with your broker before executing any trade.</p>
+      </footer>
+    </div>
+  </section>
+
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
