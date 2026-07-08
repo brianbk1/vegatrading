@@ -1,6 +1,43 @@
 import React, { useState } from 'react';
 import './responsive.css';
 
+// ── Google AdSense ──────────────────────────────────────────
+// Create 3 "Display ad" units in your AdSense dashboard
+// (Ads → By ad unit → Display ads) and paste each slot ID below.
+const AD_CLIENT = 'ca-pub-5006125305468777';
+const AD_SLOTS = {
+  top: 'XXXXXXXXXX',     // below intro, above the calculator
+  content: 'XXXXXXXXXX', // inside the educational content below the app
+  results: 'XXXXXXXXXX', // bottom of the analysis results page
+};
+
+function AdUnit({ slot }) {
+  const insRef = React.useRef(null);
+  React.useEffect(() => {
+    try {
+      // Only push if this <ins> hasn't already been filled
+      if (insRef.current && !insRef.current.getAttribute('data-ad-status')) {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      }
+    } catch (e) {
+      // AdSense not loaded yet (blocker, pre-approval, etc.) — fail silently
+    }
+  }, []);
+  return (
+    <div style={{ margin: '1.5rem 0', textAlign: 'center', minHeight: '50px' }}>
+      <ins
+        ref={insRef}
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client={AD_CLIENT}
+        data-ad-slot={slot}
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+}
+
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
   const [currentPrice, setCurrentPrice] = useState(null);
@@ -349,6 +386,8 @@ export default function DayTradingApp() {
           <p style={{ margin: 0, fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)', color: '#6b7280' }}>Analyze your <strong>options trades</strong> in seconds. See expected profit at any price move, manage risk with the 2% rule, and trade with confidence.</p>
         </div>
 
+        <AdUnit slot={AD_SLOTS.top} />
+
         {!analysisResult ? (
           <div className="vt-card" style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
@@ -529,6 +568,8 @@ export default function DayTradingApp() {
               <p style={{ margin: '0 0 0.75rem 0' }}><strong>Get your score:</strong> Above 75 = institutional-grade, 60-74 = tradeable, below 60 = caution.</p>
               <p style={{ margin: 0 }}><strong>Verify:</strong> Always cross-check data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.</p>
             </div>
+
+            <AdUnit slot={AD_SLOTS.content} />
 
             <div className="vt-card" style={{ background: '#f9fafb', borderRadius: '8px', marginTop: '2rem', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.8', borderLeft: '4px solid #00c8c8' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>Understanding Options Day Trading Calculations</h3>
@@ -735,6 +776,8 @@ export default function DayTradingApp() {
               </div>
               <ClaudeChat analysisResult={analysisResult} />
             </div>
+
+            <AdUnit slot={AD_SLOTS.results} />
 
             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>⚠️ Information provided for analysis only. Verify all data with your broker before trading.</p>
