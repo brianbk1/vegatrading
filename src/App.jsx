@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './responsive.css';
 
 export default function DayTradingApp() {
   const [ticker, setTicker] = useState('');
@@ -340,7 +341,7 @@ export default function DayTradingApp() {
   };
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', minHeight: '100vh', padding: '2rem', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1f2937' }}>
+    <div className="vt-page" style={{ background: 'linear-gradient(135deg, #fff8f0 0%, #f0f8ff 100%)', minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#1f2937' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <h1 style={{ textAlign: 'center', marginBottom: '1rem', fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', fontWeight: 700 }}>⚡ Vega Day Trading Analyzer</h1>
         <div style={{ textAlign: 'center', marginBottom: '2rem', fontSize: 'clamp(0.9rem, 2vw, 1rem)', color: '#4b5563', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto 2rem', padding: '0 1rem' }}>
@@ -349,7 +350,7 @@ export default function DayTradingApp() {
         </div>
 
         {!analysisResult ? (
-          <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+          <div className="vt-card" style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e', fontWeight: 600 }}>
                 ⚠️ INFORMATION: This tool provides analytical information about options trades. It is not financial advice, and you are solely responsible for your trading decisions. Always verify data with your broker before executing any trades.
@@ -357,8 +358,8 @@ export default function DayTradingApp() {
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ticker</label>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <input type="text" value={ticker} onChange={(e) => handleTickerInput(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <input type="text" value={ticker} onChange={(e) => handleTickerInput(e.target.value)} placeholder="e.g., QQQ, SPY, TSLA" style={{ flex: '1 1 180px', minWidth: 0, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '1rem' }} />
                 <button
                   onClick={handleCheckPrice}
                   disabled={tickerFetchInProgress}
@@ -371,14 +372,15 @@ export default function DayTradingApp() {
                     fontWeight: 600,
                     cursor: tickerFetchInProgress ? 'not-allowed' : 'pointer',
                     opacity: tickerFetchInProgress ? 0.6 : 1,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    flex: '1 1 auto'
                   }}
                 >
                   {tickerFetchInProgress ? '⏳ Checking...' : '💵 Check Price'}
                 </button>
               </div>
               {(lastClosePrice && lastClosePrice > 1) ? (
-                <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600, background: '#fef3c7', padding: '1rem', borderRadius: '6px', border: '1px solid #fcd34d', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                <div className="vt-grid-3" style={{ fontSize: '0.85rem', marginTop: '0.5rem', fontWeight: 600, background: '#fef3c7', padding: '1rem', borderRadius: '6px', border: '1px solid #fcd34d', display: 'grid', gap: '0.75rem' }}>
                   {dayHigh && dayHigh > 1 && (
                     <div style={{ color: '#047857' }}>
                       <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6b7280', marginBottom: '0.25rem' }}>📈 Day High</div>
@@ -528,7 +530,7 @@ export default function DayTradingApp() {
               <p style={{ margin: 0 }}><strong>Verify:</strong> Always cross-check data on <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: '#00c8c8', textDecoration: 'underline' }}>Finviz.com</a> before trading.</p>
             </div>
 
-            <div style={{ background: '#f9fafb', padding: '2rem', borderRadius: '8px', marginTop: '2rem', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.8', borderLeft: '4px solid #00c8c8' }}>
+            <div className="vt-card" style={{ background: '#f9fafb', borderRadius: '8px', marginTop: '2rem', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.8', borderLeft: '4px solid #00c8c8' }}>
               <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#1e40af' }}>Understanding Options Day Trading Calculations</h3>
               
               <p style={{ margin: '0 0 1rem 0' }}>Our <strong>free options calculator</strong> helps day traders make smarter decisions by analyzing three critical factors: <strong>delta</strong> (directional risk), <strong>theta</strong> (time decay), and <strong>volatility</strong> (IV crush potential).</p>
@@ -547,8 +549,8 @@ export default function DayTradingApp() {
             </div>
           </div>
         ) : (
-          <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', overflow: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
-            <button onClick={() => setAnalysisResult(null)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', marginBottom: '1.5rem', cursor: 'pointer', fontWeight: 600, position: 'sticky', top: 0 }}>
+          <div className="vt-card vt-results" style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <button onClick={() => setAnalysisResult(null)} style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', marginBottom: '1.5rem', cursor: 'pointer', fontWeight: 600, position: 'sticky', top: 0, zIndex: 10 }}>
               ← Back to Form
             </button>
 
@@ -625,7 +627,7 @@ export default function DayTradingApp() {
             <div style={{ background: '#fef3c7', border: '2px solid #f59e0b', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#92400e' }}>
               <strong>⚠️ IMPORTANT:</strong> These are <strong>theoretical calculations based on estimated Vega</strong>, NOT real broker data. Vega is estimated from our formula, not from actual market volatility surfaces. Your actual losses may differ significantly. <strong>Always verify with your broker's Greeks before trading.</strong>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="vt-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
               {analysisResult.ivCrushImpact.map((scenario, idx) => (
                 <div key={idx} style={{ background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: '6px', padding: '1rem' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#9a3412', marginBottom: '0.5rem' }}>If IV drops {scenario.label.match(/\(.*\)/)[0]}</div>
@@ -639,7 +641,7 @@ export default function DayTradingApp() {
             </div>
 
             <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', marginTop: '2rem', borderBottom: '2px solid #ff8c42', paddingBottom: '0.5rem' }}>Analysis Results</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+            <div className="vt-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Type</div><div style={{ fontSize: '1.5rem', fontWeight: 700, color: analysisResult.optionType === 'call' ? '#10b981' : '#ef4444' }}>{analysisResult.optionType === 'call' ? '📈 CALL' : '📉 PUT'}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ticker</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{analysisResult.ticker}</div></div>
               <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '8px' }}><div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Strike</div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${analysisResult.strikePrice.toFixed(2)}</div></div>
@@ -707,6 +709,7 @@ export default function DayTradingApp() {
                 <strong>💡 Key Insight:</strong> If Fed signals higher rates by mid-June, expect QQQ to move $20-40 in your favor within 2-5 days. Your put spread at $700 would likely be profitable. Higher IV from the shock also increases option value.
               </div>
             </div>
+            {analysisResult.userThesis && (
               <div style={{ background: '#f3f4f6', border: '2px solid #9ca3af', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
                 <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#374151' }}>📌 Your Thesis</h3>
                 <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#4b5563', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>{analysisResult.userThesis}</p>
@@ -881,7 +884,7 @@ function WhatIfSimulator({ analysisResult }) {
       {/* Position Info Input */}
       <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1rem' }}>
         <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', fontWeight: 700, color: '#1e40af' }}>📊 Your Position</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="vt-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1rem' }}>
           <div>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1e40af', display: 'block', marginBottom: '0.3rem' }}>Number of Contracts</label>
             <input 
@@ -912,7 +915,7 @@ function WhatIfSimulator({ analysisResult }) {
       <div style={{ background: '#f0f9ff', border: '2px solid #00c8c8', borderRadius: '8px', padding: '1.5rem' }}>
         <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#1e40af', fontWeight: 600 }}>📈 Simulate different scenarios - adjust price, days remaining, AND VXN:</p>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div className="vt-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#1e40af' }}>Stock Price ($)</label>
             <input 
@@ -969,7 +972,7 @@ function WhatIfSimulator({ analysisResult }) {
       <div style={{ background: isProfit ? '#ecfdf5' : '#fef2f2', border: `2px solid ${isProfit ? '#10b981' : '#ef4444'}`, borderRadius: '8px', padding: '1.5rem' }}>
         <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', fontWeight: 700, color: isProfit ? '#047857' : '#991b1b' }}>💰 Your Position P&L ({numContracts} contracts)</h4>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div className="vt-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1rem' }}>
           <div>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>DELTA GAIN</div>
             <div style={{ fontSize: '1.25rem', fontWeight: 700, color: totalDeltaGain >= 0 ? '#10b981' : '#ef4444' }}>
@@ -995,7 +998,7 @@ function WhatIfSimulator({ analysisResult }) {
           </div>
         </div>
         
-        <div style={{ background: isProfit ? '#f0fdf4' : '#fef5f5', border: `1px solid ${isProfit ? '#86efac' : '#fca5a5'}`, borderRadius: '6px', padding: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
+        <div className="vt-grid-3" style={{ background: isProfit ? '#f0fdf4' : '#fef5f5', border: `1px solid ${isProfit ? '#86efac' : '#fca5a5'}`, borderRadius: '6px', padding: '1rem', display: 'grid', gap: '1rem', textAlign: 'center' }}>
           <div>
             <div style={{ fontSize: '0.7rem', color: '#6b7280', fontWeight: 600 }}>TOTAL P&L</div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: isProfit ? '#10b981' : '#ef4444' }}>

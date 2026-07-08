@@ -1,0 +1,75 @@
+/* ============================================
+   Responsive layout for Vega Trading Analyzer
+   Inline styles handle colors/spacing; these
+   classes handle ONLY what needs media queries.
+   ============================================ */
+
+body {
+  margin: 0;
+}
+
+/* Page wrapper: generous padding on desktop, tight on phones */
+.vt-page {
+  padding: 2rem;
+}
+
+/* White content cards */
+.vt-card {
+  padding: 2rem;
+}
+
+/* Results card: contained scroll on desktop only */
+.vt-results {
+  overflow: auto;
+  max-height: calc(100vh - 100px);
+}
+
+/* Grid column definitions (display:grid + gap stay inline) */
+.vt-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.vt-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.vt-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 768px) {
+  .vt-grid-4 {
+    grid-template-columns: repeat(2, 1fr); /* 2x2 stat cards */
+  }
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 640px) {
+  .vt-page {
+    padding: 1rem 0.75rem;
+  }
+  .vt-card {
+    padding: 1.25rem 1rem;
+  }
+  /* Let the page itself scroll — no nested scroll container on mobile */
+  .vt-results {
+    overflow: visible;
+    max-height: none;
+  }
+  .vt-grid-2,
+  .vt-grid-3 {
+    grid-template-columns: 1fr; /* stack stat trios, sliders, P&L cells */
+  }
+  /* Prevent iOS Safari auto-zoom on focus (fires when font-size < 16px) */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  /* Comfortable touch targets */
+  input[type='range'] {
+    min-height: 32px;
+  }
+  button {
+    min-height: 44px;
+  }
+}
