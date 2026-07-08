@@ -8,6 +8,20 @@ body {
   margin: 0;
 }
 
+/* ---------- AdSense ---------- */
+.vt-ad {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+/* Collapse ad units Google couldn't fill (localhost, pre-approval, no inventory) */
+.vt-ad ins.adsbygoogle[data-ad-status='unfilled'] {
+  display: none !important;
+}
+/* Also remove the wrapper's margins when the ad inside is unfilled */
+.vt-ad:has(ins[data-ad-status='unfilled']) {
+  display: none;
+}
+
 /* Page wrapper: generous padding on desktop, tight on phones */
 .vt-page {
   padding: 2rem;

@@ -24,7 +24,7 @@ function AdUnit({ slot }) {
     }
   }, []);
   return (
-    <div style={{ margin: '1.5rem 0', textAlign: 'center', minHeight: '50px' }}>
+    <div className="vt-ad">
       <ins
         ref={insRef}
         className="adsbygoogle"
