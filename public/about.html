@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About Vega Trading | Vega Trading</title>
+<meta name="description" content="What Vega Trading is, what it calculates, and who it's built for — a free options day-trading analyzer with Greeks, IV crush modeling, and position sizing.">
+<link rel="canonical" href="https://www.vegatrading.ai/about.html">
+<meta name="google-adsense-account" content="ca-pub-5006125305468777">
+<style>
+  :root{--pri:#1e40af;--ink:#1f2937;--muted:#6b7280;--paper:#f8fafc;--rule:#e2e8f0;--accent:#ff8c42;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);line-height:1.7;font-size:17px}
+  header{background:var(--pri);padding:18px 24px}
+  header a{color:#fff;text-decoration:none;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-weight:700;font-size:18px;letter-spacing:.2px}
+  nav{background:var(--pri);padding:0 24px 14px;display:flex;flex-wrap:wrap;gap:2px 18px}
+  nav a{color:#bfdbfe;text-decoration:none;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px}
+  nav a:hover{color:#fff;text-decoration:underline}
+  main{max-width:760px;margin:0 auto;padding:48px 24px 72px}
+  h1{font-size:32px;color:var(--pri);line-height:1.2;margin-bottom:8px}
+  .updated{font-family:-apple-system,'Segoe UI',sans-serif;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 32px;padding-bottom:16px;border-bottom:1px solid var(--rule)}
+  h2{font-size:21px;color:var(--pri);margin:32px 0 12px}
+  h3{font-size:17px;color:var(--ink);margin:20px 0 8px}
+  p{margin-bottom:15px}
+  ul{margin:0 0 15px 22px}
+  li{margin-bottom:7px}
+  a{color:var(--pri)}
+  .card{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:22px;margin:18px 0}
+  .email{font-family:-apple-system,'Segoe UI',sans-serif;font-weight:600;font-size:17px}
+  .cta{display:inline-block;background:var(--pri);color:#fff;text-decoration:none;font-family:-apple-system,'Segoe UI',sans-serif;font-weight:600;padding:12px 22px;border-radius:6px;margin-top:6px}
+  footer{border-top:1px solid var(--rule);margin-top:24px;padding:26px 24px;text-align:center;font-family:-apple-system,'Segoe UI',sans-serif;font-size:12.5px;color:var(--muted)}
+  footer a{color:var(--pri);text-decoration:none;margin:0 8px}
+</style>
+</head>
+<body>
+<header><a href="/">ν Vega Trading</a></header>
+<nav>
+  <a href="/">Analyzer</a>
+  <a href="/about.html">About</a>
+  <a href="/contact.html">Contact</a>
+  <a href="/privacy.html">Privacy</a>
+  <a href="/terms.html">Terms & Risk Disclosure</a>
+</nav>
+<main>
+  <h1>About Vega Trading</h1>
+  
+  <p>Vega Trading is a free options day-trading analyzer built for traders who already understand the basics and want a faster way to check the math before they click buy. Enter a ticker, a strike, and the option price you're actually being quoted, and the tool estimates the Greeks, models an IV crush scenario, and scores the setup on risk/reward and position sizing.</p>
+  <p>It was built out of a simple frustration: broker platforms show you a chain, not a decision. Knowing an option's delta is 0.30 doesn't tell you whether the trade is well-sized relative to your account, whether theta will eat the position before your thesis plays out, or what happens to the price if implied volatility collapses the moment the catalyst passes. Vega Trading exists to answer those questions in the ten seconds before an order gets placed, not after.</p><h2>What It Actually Calculates</h2><ul><li><strong>The Greeks</strong> — delta, theta, gamma, and vega, estimated from price, strike, and time to expiration when you don't have your broker's exact figures on hand.</li><li><strong>IV crush simulation</strong> — models what the position is worth after implied volatility deflates post-catalyst, which is the single most common reason a directionally correct trade still loses money.</li><li><strong>Position sizing</strong> — checks a proposed contract size against account risk rules, so a good idea doesn't become an oversized one.</li><li><strong>Risk/reward and a composite score</strong> — a quick read on whether the setup's math supports the trade, not a signal to buy or sell.</li></ul><h2>Who It's For</h2><p>Retail options traders, particularly those trading index products like QQQ around scheduled catalysts — FOMC decisions, CPI prints, and earnings — where implied volatility behaves in ways that aren't obvious from price alone. It assumes you already know what a call and a put are; it isn't a beginner's course, it's a calculator for people already at the table.</p><h2>What It Isn't</h2><p>Vega Trading is an educational and analytical tool, not a broker, not a signal service, and not financial advice. It doesn't execute trades, hold your data, or recommend specific positions. Every number it produces is an estimate meant to inform your own decision — always verify against your broker's live chain before acting. See the full <a href="/terms.html">risk disclosure</a> for detail.</p><p><a class="cta" href="/">Open the Analyzer →</a></p>
+</main>
+<footer>
+  <a href="/">Analyzer</a> · <a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms & Risk Disclosure</a>
+  <p style="margin-top:10px">© 2026 Vega Trading. The BK Consulting Group, West Chester, PA.</p>
+</footer>
+</body>
+</html>

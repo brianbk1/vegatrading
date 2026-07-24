@@ -11,6 +11,30 @@ const AD_SLOTS = {
   results: 'XXXXXXXXXX', // bottom of the analysis results page
 };
 
+// Links out to the static pages in /public — about.html, privacy.html, etc.
+// These are plain HTML, not React routes, so this is a normal <a> tag, not a
+// client-side Link. Keep this in sync with public/*.html if pages are renamed.
+function SiteFooterNav() {
+  const links = [
+    ["/about.html", "About"],
+    ["/contact.html", "Contact"],
+    ["/privacy.html", "Privacy Policy"],
+    ["/terms.html", "Terms & Risk Disclosure"],
+  ];
+  return (
+    <div style={{ textAlign: 'center', padding: '1.5rem 1rem 0.5rem', borderTop: '1px solid #e5e7eb', marginTop: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 16px', marginBottom: 8 }}>
+        {links.map(([href, label]) => (
+          <a key={href} href={href} style={{ fontSize: 12.5, color: '#1e40af', textDecoration: 'none' }}>{label}</a>
+        ))}
+      </div>
+      <p style={{ fontSize: 11.5, color: '#9ca3af', margin: 0, lineHeight: 1.6 }}>
+        Educational tool only — not financial advice. Options trading involves substantial risk.
+      </p>
+    </div>
+  );
+}
+
 function AdUnit({ slot }) {
   const insRef = React.useRef(null);
   React.useEffect(() => {
@@ -785,6 +809,7 @@ export default function DayTradingApp() {
           </div>
         )}
       </div>
+      <SiteFooterNav />
     </div>
   );
 }
